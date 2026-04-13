@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>严重等级评估 — Delivery Acceleration Plan</title>
+<link rel="stylesheet" href="style.css">
+<style>
+/* Priority page specific styles */
+.section-box{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:1.5rem 2rem;margin-bottom:1.5rem}
+.section-box h2{margin:0 0 1rem;border-bottom:none;padding-bottom:0}
+.insight{background:#eff6ff;border-left:4px solid #2563eb;padding:.8rem 1.2rem;border-radius:0 8px 8px 0;margin:.8rem 0;font-size:.92rem;color:#1e40af}
+.insight b{color:#1d4ed8}
+.formula{background:#f0fdf4;border:2px dashed #16a34a;border-radius:8px;padding:.8rem 1.2rem;text-align:center;font-size:1rem;color:#15803d;font-weight:600;margin:1rem 0}
+/* Dimension table */
+.dim-table th{width:auto;white-space:nowrap}
+.dim-table td:first-child,.dim-table th:first-child{width:40px;text-align:center}
+.dim-table td:nth-child(2),.dim-table th:nth-child(2){width:180px}
+/* Priority assessment table */
+.pri-table{font-size:.82rem}
+.pri-table th,.pri-table td{padding:.5rem .6rem}
+.pri-table th{white-space:nowrap;width:auto}
+.pri-table tr:nth-child(even) td{background:#fafbfc}
+.pri-table td:nth-child(1){text-align:center;font-weight:700;width:30px}
+.pri-table td:nth-child(3),.pri-table td:nth-child(4),.pri-table td:nth-child(5),.pri-table td:nth-child(6),.pri-table td:nth-child(7){text-align:center;width:100px;min-width:100px;max-width:100px}
+/* False dep table */
+.fdep-table td:first-child{font-weight:600;color:#7c3aed;width:240px}
+.fdep-table td:nth-child(2){color:#059669}
+.fdep-table td:nth-child(3){color:#2563eb}
+/* Summary grid */
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin:1rem 0}
+.summary-item{border-radius:8px;padding:1rem 1.2rem}
+.summary-item h4{margin:0 0 .3rem;font-size:.92rem}
+.summary-item p{margin:0;font-size:.82rem;line-height:1.5}
+.summary-item.s-p0l,.summary-item.s-p0s,.summary-item.s-p0t{background:#fef2f2;border-left:4px solid #dc3545}
+.summary-item.s-p0l h4,.summary-item.s-p0s h4,.summary-item.s-p0t h4{color:#dc3545}
+.summary-item.s-p1t,.summary-item.s-p1s,.summary-item.s-p1c{background:#fff7ed;border-left:4px solid #e67e22}
+.summary-item.s-p1t h4,.summary-item.s-p1s h4,.summary-item.s-p1c h4{color:#e67e22}
+.summary-item.s-p2q{background:#ecfdf5;border-left:4px solid #059669}
+.summary-item.s-p2q h4{color:#059669}
+.summary-item.s-p2b{background:#faf5ff;border-left:4px solid #9333ea}
+.summary-item.s-p2b h4{color:#9333ea}
+/* Chain diagram */
+.chain-box{background:#1a1a2e;border-radius:var(--radius);padding:1.5rem 2rem;color:#e8e8e8;font-family:"Cascadia Code","Fira Code","Source Code Pro",monospace;font-size:.82rem;line-height:1.8;overflow-x:auto;margin:1rem 0}
+.chain-box .chain-label{color:#f9e547;font-weight:700}
+.chain-box .chain-dim{color:#6c7a89}
+.chain-box .chain-hl{color:#5dade2}
+/* Day-1 checklist */
+.day1-table td:first-child{text-align:center;font-weight:700;width:30px}
+.day1-table td:nth-child(2){font-weight:600}
+/* Comparison table */
+.cmp-table .up{color:#dc2626;font-weight:700}
+.cmp-table .keep{color:#6b7280}
+.cmp-table .redef{color:#d97706}
+/* Bottleneck callout */
+.bottleneck{background:linear-gradient(135deg,#fef3c7,#fde68a);border:2px solid #f59e0b;border-radius:var(--radius);padding:1rem 1.5rem;margin:1rem 0}
+.bottleneck b{color:#92400e}
+.bottleneck p{margin:.3rem 0;color:#78350f;font-size:.9rem}
+/* Decision framework — quadrant */
+.quadrant{display:grid;grid-template-columns:1fr 1fr;gap:0;border:2px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:1rem 0;font-size:.85rem}
+.quadrant-cell{padding:1rem 1.2rem;position:relative}
+.quadrant-cell h4{margin:0 0 .4rem;font-size:.88rem}
+.quadrant-cell ul{margin:0;padding-left:1.2rem;line-height:1.6}
+.quadrant-cell li{margin-bottom:.2rem}
+.q1{background:#fef2f2;border-right:2px solid var(--border);border-bottom:2px solid var(--border)}
+.q1 h4{color:#dc2626}
+.q2{background:#eff6ff;border-bottom:2px solid var(--border)}
+.q2 h4{color:#2563eb}
+.q3{background:#fefce8;border-right:2px solid var(--border)}
+.q3 h4{color:#ca8a04}
+.q4{background:#f0fdf4}
+.q4 h4{color:#059669}
+.quadrant-axis-x{display:flex;justify-content:space-between;font-size:.72rem;color:var(--text3);font-weight:600;padding:0 .5rem;margin-top:.3rem}
+.quadrant-axis-y{display:flex;flex-direction:column;justify-content:space-between;font-size:.72rem;color:var(--text3);font-weight:600;position:absolute;left:-2.5rem;top:0;bottom:0;padding:.5rem 0;writing-mode:vertical-lr;text-orientation:mixed}
+/* Decision mapping table */
+.decision-map th:first-child{width:200px}
+.decision-map td:nth-child(2){font-weight:600;color:#7c3aed;text-align:center;width:120px}
+/* Three-tier schedule */
+.tier{border-radius:var(--radius);padding:1rem 1.4rem;margin:.8rem 0}
+.tier h4{margin:0 0 .5rem;font-size:.92rem;display:flex;align-items:center;gap:.5rem}
+.tier-1{background:#fef2f2;border-left:4px solid #dc2626}
+.tier-1 h4{color:#dc2626}
+.tier-2{background:#eff6ff;border-left:4px solid #2563eb}
+.tier-2 h4{color:#2563eb}
+.tier-3{background:#f0fdf4;border-left:4px solid #059669}
+.tier-3 h4{color:#059669}
+.tier table{margin:0}
+.tier th,.tier td{font-size:.84rem;padding:.4rem .7rem}
+.takeaway{background:linear-gradient(135deg,#1a1a2e,#2c3e50);color:#e8e8e8;border-radius:var(--radius);padding:1.2rem 1.5rem;margin:1.2rem 0;font-size:.95rem;line-height:1.7;text-align:center}
+.takeaway b{color:#f9e547}
+</style>
+</head>
+<body>
+<div class="nav"><a href="index.html">← 返回总览</a></div>
+
+<div class="page-header">
+  <h1>严重等级评估</h1>
+  <span class="badge badge-info">基于并行执行策略</span>
+</div>
+<p class="subtitle">从"先做什么后做什么"转变为"哪条链路晚启动 1 天，Go-Live 就晚 1 天？"</p>
+
+<!-- ===== 一、评估思路 ===== -->
+<div class="section-box">
+<h2>一、评估思路</h2>
+<p>8 条链路 Day 1 全部并行启动，优先级不等于执行顺序。我们关注的核心问题是：</p>
+
+<div class="formula">
+  哪条链路晚启动 1 天，Go-Live 就晚 1 天？
+</div>
+
+<p style="margin-top:1rem">为此，我们从四个维度综合评估每条链路的资源投入力度和启动时序，确保外部等待尽早触发、高难度链路预留充足缓冲时间、长周期链路不被低估、强依赖链路优先突破。</p>
+</div>
+
+<!-- ===== 二、评估维度 ===== -->
+<div class="section-box">
+<h2>二、评估维度（4 个）</h2>
+<table class="dim-table">
+<thead>
+<tr><th>#</th><th>维度</th><th>定义</th></tr>
+</thead>
+<tbody>
+<tr><td><b>1</b></td><td>紧急程度<br><small>Urgency</small></td><td>外部等待时间越长、越不可压缩，越必须尽早触发——运营商、审批委员会、VP 协调、quota 审批</td></tr>
+<tr><td><b>2</b></td><td>推进难度<br><small>Difficulty</small></td><td>根因越不清楚，诊断可能需要的迭代轮次越多，应越早启动、预留越多 buffer</td></tr>
+<tr><td><b>3</b></td><td>时间跨度<br><small>Duration</small></td><td>是否是 Go-Live 的硬性前置条件？整体日历时间越长，越不能低估</td></tr>
+<tr><td><b>4</b></td><td>依赖强度<br><small>Dependency</small></td><td>此 Blocker 解决后能连锁解锁多少下游工作？依赖越强、牵连越广，越需要先突破</td></tr>
+</tbody>
+</table>
+
+<div class="formula">
+  严重等级由紧急程度、推进难度、时间跨度、依赖强度四个维度综合决定
+</div>
+</div>
+
+
+<!-- ===== 四、伪依赖 vs 真依赖 ===== -->
+<div class="section-box">
+<h2>四、伪依赖 vs 真依赖 — 关键识别</h2>
+<table class="fdep-table">
+<thead>
+<tr><th>表面依赖关系</th><th>为什么是伪依赖</th><th>Day-1 可执行替代方案</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>#1 Interconnect → #5 Pipeline<br><small>"带宽修好才能测 Pipeline"</small></td>
+  <td>Pipeline 诊断不需要全量带宽，只有 2PB 全量迁移才需要</td>
+  <td>用 Cloud Storage 现有数据做 profiling；子集数据即可定位 5a/5c</td>
+</tr>
+<tr>
+  <td>#5 Pipeline → #6 Region<br><small>"Pipeline 修好才能扩资源"</small></td>
+  <td>资源诊断完全独立于 Pipeline，只有 scale-up 负载测试才依赖</td>
+  <td>当天就能跑完 quota check + 机型测试 + autoscaler 审计；立即提交 quota 申请</td>
+</tr>
+<tr>
+  <td>#5 Pipeline → BigQuery<br><small>"数据写入后才能优化查询"</small></td>
+  <td>BQ 查询效率与 Pipeline 无关，查询优化只需要表结构和样本数据</td>
+  <td>用现有数据或子集跑最复杂 SQL；INFORMATION_SCHEMA 分析无需新数据</td>
+</tr>
+<tr>
+  <td>#2 Security Controls → #3 Review<br><small>"安全配置修完才能送审"</small></td>
+  <td>审批不必等全部修复再提交，先提交、边做边补</td>
+  <td>Day 1 提交现有材料（不等完美）；每次修复后更新材料即可</td>
+</tr>
+<tr>
+  <td>#4 DBA → #8 Adoption<br><small>"数据验证完才能推采用"</small></td>
+  <td>采用度 baseline 收集不依赖 DBA，只有 "数据可信" 信号依赖 DBA</td>
+  <td>Day 1 就部署 usage analytics；培训完成率、旧系统流量也可同步收集</td>
+</tr>
+<tr>
+  <td>#1~#7 技术修复 → #8 验证<br><small>"系统能用了才能看有没有人用"</small></td>
+  <td>使用数据现在就能采集；但区分"不想用"还是"不能用"需要等技术修复后</td>
+  <td>登录数、功能使用率、API 调用量——即使系统部分可用，也能观察使用模式</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<!-- ===== 五、优先级评估表 ===== -->
+<div class="section-box">
+<h2>五、严重等级评估</h2>
+<div style="overflow-x:auto">
+<table class="pri-table">
+<thead>
+<tr><th>排序</th><th>Blocker</th><th>紧急程度</th><th>推进难度</th><th>时间跨度</th><th>依赖强度</th><th>严重等级</th><th>排序理由 &amp; Day-1 行动</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td><a href="blocker3.html"><b>#3 Security Review</b></a></td>
+  <td>极高<br><small>审批数周-数月</small></td>
+  <td>中<br><small>流程明确但周期长</small></td>
+  <td>极长<br><small>Go-Live 硬门槛</small></td>
+  <td>极高<br><small>直接门控 Go-Live</small></td>
+  <td><span class="badge badge-p0">P0-长线</span></td>
+  <td>日历时间最长的单一瓶颈。每晚 1 天提交 = Go-Live 晚 1 天。即使其他全部修好，这里不过 = 全白做。<br><b>Day 1:</b> 访谈安全团队 + 提交材料 + 确认 reviewer</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><a href="blocker1.html"><b>#1 Interconnect</b></a></td>
+  <td>极高<br><small>运营商 2-4 周 + 传输 4 周</small></td>
+  <td>中<br><small>根因方向明确</small></td>
+  <td>极长<br><small>Go-Live 硬门槛</small></td>
+  <td>极高<br><small>#4/#5/#6/#7 全量依赖</small></td>
+  <td><span class="badge badge-p0">P0-长线</span></td>
+  <td>2PB 物理传输 ~4 周不可压缩；#4/#5/#6/#7 全量验证全部依赖此链。与 #3 构成 Go-Live 的双重硬约束。<br><b>Day 1:</b> iperf3 + traceroute + 联系运营商</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><a href="blocker6.html"><b>#6 Region Resources</b></a></td>
+  <td>高<br><small>quota 审批 2-4 周</small></td>
+  <td>中<br><small>诊断当天完成</small></td>
+  <td>长<br><small>Go-Live 硬门槛</small></td>
+  <td>中<br><small>与 #5 耦合</small></td>
+  <td><span class="badge badge-p0">P0-触发</span></td>
+  <td>诊断当天完成（quota+机型+autoscaler 全查一遍）；quota 审批 2-4 周不可压缩。12w 跨度（全量验证等 #1）。<br><b>Day 1:</b> 诊断 + 立即提交 quota increase request + 同时评估备选 region</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><a href="blocker5.html"><b>#5 Pipeline Latency</b></a></td>
+  <td>低<br><small>内部技术工作</small></td>
+  <td>极高<br><small>根因可能多轮迭代</small></td>
+  <td>长<br><small>Go-Live 硬门槛</small></td>
+  <td>高<br><small>驱动后续技术决策</small></td>
+  <td><span class="badge badge-p0">P0-短线</span></td>
+  <td>不确定性最高——可能是代码/网络/架构的任一组合。根因诊断驱动后续所有决策。<br><b>Day 1:</b> 子集数据 profiling + Cloud Trace + Cloud Profiler</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><a href="blocker7.html"><b>#7 BigQuery Cost</b></a></td>
+  <td>低<br><small>纯内部</small></td>
+  <td>低<br><small>方向明确</small></td>
+  <td>短<br><small>非 Go-Live 门槛</small></td>
+  <td>低<br><small>TCO 信心</small></td>
+  <td><span class="badge badge-p1">P1-快赢</span></td>
+  <td>不确定性低；纯内部技术工作。但有 Quick Win 价值——优化最贵查询能立竿见影展示成本改善，增强业务部门信心。12w 跨度（全量验证等 #1）。<br><b>Day 1:</b> INFORMATION_SCHEMA.JOBS top 20 + 跑最复杂 SQL 子集 + 分区/聚簇检查</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><a href="blocker8.html"><b>#8 User Adoption</b></a></td>
+  <td>低<br><small>依赖 H1 技术修复</small></td>
+  <td>高<br><small>"不能用"vs"不想用"待判</small></td>
+  <td>长<br><small>用户必须切换</small></td>
+  <td>低<br><small>终端环节</small></td>
+  <td><span class="badge badge-p1">P1-后台</span></td>
+  <td>高不确定性但<b>依赖真实</b>——必须等系统可用后才能区分 "不能用" vs "不想用"。12w 跨度。<br><b>Day 1:</b> 部署 usage analytics（零成本后台收集）<br><b>Week 4+:</b> 启动访谈和培训审查</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><a href="blocker4.html"><b>#4 DBA Engagement</b></a></td>
+  <td>中<br><small>VP 协调 1-3 周</small></td>
+  <td>低<br><small>人员问题非技术黑箱</small></td>
+  <td>长<br><small>数据签字硬门槛</small></td>
+  <td>中<br><small>→ 采用</small></td>
+  <td><span class="badge badge-p1">P1-协调</span></td>
+  <td>不确定性低（人员协调问题，不是技术黑箱）。但跨部门协调有不可压缩的组织周期。12w 跨度（全量验证等 #1）。<br><b>Day 1:</b> 审查 schema + 写自动化脚本 + 联系 DBA Lead + 触发 VP 协调</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><a href="blocker2.html"><b>#2 Security Controls</b></a></td>
+  <td>中<br><small>org policy 审批 1-3 周</small></td>
+  <td>中<br><small>扫描当天完成</small></td>
+  <td>长<br><small>Go-Live 硬门槛</small></td>
+  <td>高<br><small>直接供给 #3</small></td>
+  <td><span class="badge badge-p1">P1-短线</span></td>
+  <td>扫描当天完成；结果直接供给 #3（排序第 1）。IAM/Firewall 可快速修复（天级）；Org Policy exemption 需审批（周级）。<br><b>Day 1:</b> 全量扫描 + gap 清单 → 喂给 #3</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p style="font-size:.78rem;color:var(--text3);margin-top:.5rem">评估等级：极高 / 高 / 中 / 低 &nbsp;&nbsp;|&nbsp;&nbsp; 时间跨度：极长 / 长 / 短</p>
+</div>
+
+<!-- ===== 六、优先级分类总结 ===== -->
+<div class="section-box">
+<h2>六、严重等级总结</h2>
+<div class="summary-grid">
+  <div class="summary-item s-p0l">
+    <h4>P0-长线 &mdash; #3 Security Review</h4>
+    <p>日历时间最长、Go-Live 硬门槛、不可压缩<br><b>原则：</b>Day 1 提交；每次技术修复后更新材料</p>
+  </div>
+  <div class="summary-item s-p0l">
+    <h4>P0-长线 &mdash; #1 Interconnect</h4>
+    <p>2PB 物理传输 ~4 周不可压缩；#4/#5/#6/#7 全量验证全部依赖此链<br><b>原则：</b>Day 1 网络诊断 + 当天联系运营商；与 #3 构成 Go-Live 双重硬约束</p>
+  </div>
+  <div class="summary-item s-p0t">
+    <h4>P0-触发 &mdash; #6 Region Resources</h4>
+    <p>诊断当天完成但 quota 审批 2-4 周。12w 跨度（全量验证等 #1）<br><b>原则：</b>Day 1 诊断 + 当天提交 quota request（不可压缩等待，越早越好）</p>
+  </div>
+  <div class="summary-item s-p0s">
+    <h4>P0-短线 &mdash; #5 Pipeline Latency</h4>
+    <p>技术不确定性最高，诊断结果驱动后续所有技术决策<br><b>原则：</b>子集数据 Day 1 启动 profiling，不等 Interconnect 修复</p>
+  </div>
+  <div class="summary-item s-p1s">
+    <h4>P1-快赢 &mdash; #7 BigQuery Cost</h4>
+    <p>不阻断 Go-Live 但有立竿见影的成本改善价值。12w 跨度（全量验证等 #1）<br><b>原则：</b>用数据子集测最复杂 SQL + 查 INFORMATION_SCHEMA → Quick Win</p>
+  </div>
+  <div class="summary-item s-p1c">
+    <h4>P1-后台 &mdash; #8 User Adoption</h4>
+    <p>Day 1 启动后台数据收集，Week 4+ 启动主动验证。12w 跨度<br><b>原则：</b>先零成本后台采集数据；技术修复见效后再投入人力做访谈和培训</p>
+  </div>
+  <div class="summary-item s-p1c">
+    <h4>P1-协调 &mdash; #4 DBA Engagement</h4>
+    <p>技术准备 Day 1 启动，人员协调需要 VP 介入。12w 跨度（全量验证等 #1）<br><b>原则：</b>CE+Partner 先做技术校验；同步触发 VP 协调 DBA 到位</p>
+  </div>
+  <div class="summary-item s-p1s">
+    <h4>P1-短线 &mdash; #2 Security Controls</h4>
+    <p>Day 1 扫描完成，结果直接喂给 #3 Security Review<br><b>原则：</b>当天产出 gap 清单 → IAM/Firewall 快速修复 → Org Policy exemption 申请</p>
+  </div>
+</div>
+</div>
+
+<div class="nav" style="margin-top:1rem"><a href="index.html">← 返回总览</a></div>
+<div class="footer">Delivery Acceleration Plan — 严重等级评估</div>
+</body>
+</html>

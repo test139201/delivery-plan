@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>#8 User Adoption — Blocker Detail</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.ref-col{width:90px;text-align:center;font-size:.75rem;color:#6b7280;font-family:"Cascadia Code","Fira Code",monospace;vertical-align:middle;letter-spacing:-.02em;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="nav"><a href="index.html">← 返回总览</a></div>
+
+<div class="page-header">
+  <h1>#8 User Adoption</h1>
+  <span class="badge badge-p1">P1-后台</span>
+  <span class="status status-pending">待验证</span>
+</div>
+<p class="subtitle">Day 1 部署 usage analytics 后台收集，Week 4+ 启动主动验证</p>
+
+<div class="card">
+<table>
+<tr class="section-header"><td colspan="3">基本信息</td></tr>
+<tr><th>架构图位置</th><td>无直接对应 ⚠️ — 架构图只展示技术拓扑，不展示用户行为</td><td class="ref-col"></td></tr>
+<tr><th>Blocker 状态</th><td>这是一个预判性假设</td><td class="ref-col"></td></tr>
+<tr><th>数据来源</th><td>当前产能仅为目标的 ~5% — 即使部分技术问题存在，95% 的产能 gap 是否全部由技术问题解释？有可能系统部分可用但用户未迁移过来</td><td class="ref-col"></td></tr>
+<tr><th>Priority</th><td>取决于 H1/H2 的验证结果；如果技术修复后系统实际使用率仍未上升，则此假设升级为 P0</td><td class="ref-col"></td></tr>
+<tr><th>假设归属</th><td>H2: 组织与流程</td><td class="ref-col"></td></tr>
+<tr><th>怀疑方向</th><td>技术部署可能部分可用，但终端用户未切换到新系统，实际生产吞吐量无法上升</td><td class="ref-col"></td></tr>
+<tr><th>前提条件</th><td>⚠️ 此假设在 H1 技术问题基本解决后才能有效验证——如果系统本身跑不了，无法区分"不能用"和"不想用"</td><td class="ref-col"></td></tr>
+
+<tr class="section-header hyp"><td colspan="3">Sub-Hypotheses</td></tr>
+
+<tr class="sub-hyp"><th>8a — 用户未接受培训</th><td>终端用户不知道新系统如何使用，或培训材料不匹配实际工作流</td><td class="ref-col"></td></tr>
+<tr class="validate"><th>✅ Validate</th><td>培训完成率 &lt;30%；用户反馈"不知道怎么用"；培训内容与实际操作步骤不一致</td><td class="ref-col">→ A1,4<br>→ A5,6</td></tr>
+<tr class="invalidate"><th>❌ Invalidate</th><td>培训完成率 &gt;80% 且用户反馈培训有效 → 不是培训问题</td><td class="ref-col">→ A1,4<br>→ A5,6</td></tr>
+<tr class="fallback"><th>→ 若排除</th><td>检查 Sub-Hypothesis 8b</td><td class="ref-col"></td></tr>
+
+<tr class="sub-hyp"><th>8b — 缺少变更管理计划</th><td>没有正式的切换计划和时间表，用户不知道何时必须切换，旧系统未被关闭</td><td class="ref-col"></td></tr>
+<tr class="validate"><th>✅ Validate</th><td>无正式的 cutover plan；旧系统仍在运行且无关闭时间表；管理层未发布切换指令</td><td class="ref-col">→ A1,2<br>→ A5,7,8</td></tr>
+<tr class="invalidate"><th>❌ Invalidate</th><td>有明确的 cutover plan + deadline + 管理层通知 → 不是变更管理问题</td><td class="ref-col">→ A1,2<br>→ A5,7,8</td></tr>
+<tr class="fallback"><th>→ 若排除</th><td>检查 Sub-Hypothesis 8c</td><td class="ref-col"></td></tr>
+
+<tr class="sub-hyp"><th>8c — 业务流程未适配</th><td>新系统的工作流与旧业务流程不兼容，用户被迫绕回旧系统</td><td class="ref-col"></td></tr>
+<tr class="validate"><th>✅ Validate</th><td>用户访谈显示"新系统缺少我日常需要的某个步骤"；旧流程仍在并行运行且无人迁移</td><td class="ref-col">→ A1,3<br>→ A5,9</td></tr>
+<tr class="invalidate"><th>❌ Invalidate</th><td>新系统完整覆盖旧业务流程 → 不是流程问题</td><td class="ref-col">→ A1,3<br>→ A5,9</td></tr>
+<tr class="fallback"><th>→ 若排除</th><td>可能是纯粹的习惯阻力，需要管理层强制推动 + Change Champion</td><td class="ref-col"></td></tr>
+
+<tr class="section-header disc"><td colspan="3">Discovery — Technical Actions</td></tr>
+<tr><th>Action 1</th><td>Usage Analytics Baseline — 分析实际登录人数、功能使用率、API 调用量；对比授权用户数 vs 活跃用户数</td><td class="ref-col">← 8a,8b,8c</td></tr>
+<tr><th>Action 2</th><td>新旧系统并行使用比例 — 监控旧系统是否仍有活跃流量；如有，占总流量多少？</td><td class="ref-col">← 8b</td></tr>
+<tr><th>Action 3</th><td>User Journey 分析 — 用户在新系统中的操作路径是否完整？有没有中途退出的断点？</td><td class="ref-col">← 8c</td></tr>
+<tr><th>Action 4</th><td>培训完成率数据 — 从 LMS 或培训系统提取完成率、考核通过率、课程覆盖范围</td><td class="ref-col">← 8a</td></tr>
+
+<tr class="section-header disc"><td colspan="3">Discovery — Process Actions</td></tr>
+<tr><th>Action 5</th><td>终端用户访谈（10-15人）— 分层抽样：活跃用户（为什么在用？体验如何？）+ 非活跃用户（为什么不用？什么阻碍了？）+ 管理层（是否知道切换进度？）</td><td class="ref-col">← 8a,8b,8c</td></tr>
+<tr><th>Action 6</th><td>培训材料审查 — 培训内容是否匹配新系统的实际操作？是否覆盖了关键业务场景？</td><td class="ref-col">← 8a</td></tr>
+<tr><th>Action 7</th><td>变更管理计划检查 — 有无正式 cutover plan？旧系统有无关闭时间表？管理层是否发布了切换指令？</td><td class="ref-col">← 8b</td></tr>
+<tr><th>Action 8</th><td>Change Champion 识别 — 在活跃用户中识别有影响力的人，愿意帮助推动 peer adoption</td><td class="ref-col">← 8b</td></tr>
+<tr><th>Action 9</th><td>业务流程对比 — 映射旧工作流 vs 新工作流，识别功能 gap 和摩擦点</td><td class="ref-col">← 8c</td></tr>
+
+<tr class="section-header disc"><td colspan="3">Discovery 产出物</td></tr>
+<tr><th>产出物</th><td>Adoption Gap Report & User Readiness Score — 包含：活跃率基线、培训覆盖度、变更管理成熟度评分、业务流程 gap 清单、Change Champion 候选名单、推荐采用加速计划</td><td class="ref-col"></td></tr>
+
+<tr class="section-header exec"><td colspan="3">执行计划</td></tr>
+<tr><th>Phase 0-1 (Week 1-3)</th><td>仅做 baseline 数据收集（Action 1-4）——此阶段重心在技术修复，采用数据作为 background 积累</td><td class="ref-col"></td></tr>
+<tr><th>Phase 2 (Week 4-7)</th><td>技术修复取得阶段性成果后，启动用户访谈和培训审查（Action 5-9）；产出 Adoption Gap Report</td><td class="ref-col"></td></tr>
+<tr><th>Phase 2 后半 (Week 6-7)</th><td>基于 Gap Report 制定采用加速计划：更新培训内容、启动 Change Champion 计划、制定 cutover timeline</td><td class="ref-col"></td></tr>
+<tr><th>Phase 3 (Week 8-12)</th><td>执行采用加速计划；监控活跃率周环比增长；Phase 3 末期达成全量生产运行 + Legacy 系统退役就绪</td><td class="ref-col"></td></tr>
+
+<tr class="section-header raci"><td colspan="3">RACI</td></tr>
+<tr><th>R — Responsible</th><td>Outcome CE（采用框架设计）+ Customer Change Management Lead（执行变更管理）</td><td class="ref-col"></td></tr>
+<tr><th>A — Accountable</th><td>VP of Operations（授权变更管理计划 + 旧系统关闭决策）</td><td class="ref-col"></td></tr>
+<tr><th>C — Consulted</th><td>Training Partners（培训内容更新）、End Users / BU Leaders（反馈和配合）、Head of Cloud Delivery（技术就绪确认）</td><td class="ref-col"></td></tr>
+<tr><th>I — Informed</th><td>Google TAM（平台使用情况和技术支持跟踪）</td><td class="ref-col"></td></tr>
+
+<tr class="section-header risk"><td colspan="3">风险与成功标准</td></tr>
+<tr><th>成功标准</th><td>活跃用户数 / 授权用户数 ≥70%；旧系统流量降至 &lt;10%；新平台承载全量生产负载且 Legacy 进入退役倒计时</td><td class="ref-col"></td></tr>
+<tr><th>风险</th><td>技术问题迟迟未解决导致采用工作无法启动；管理层不愿强制推动切换（"让用户自己选"）</td><td class="ref-col"></td></tr>
+<tr><th>风险缓解</th><td>Phase 0-1 先做 baseline 数据收集不占主线资源；提前与 VP 对齐——全量迁移上线和 Legacy 退役是他的核心目标，采用推动需要他的管理权威</td><td class="ref-col"></td></tr>
+<tr><th>Blocker 依赖</th><td>依赖 H1 全部 Blocker 基本解决——系统必须可用且性能达标才能推动用户采用；与 #4（DBA）间接相关——数据验证完成后数据才可信，用户才愿意切换</td><td class="ref-col"></td></tr>
+</table>
+</div>
+
+<div class="nav" style="margin-top:1rem"><a href="index.html">← 返回总览</a></div>
+<div class="footer">Delivery Acceleration Plan — H3 用户采用滞后 Detail</div>
+</body>
+</html>

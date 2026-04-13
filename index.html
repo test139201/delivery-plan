@@ -1,0 +1,1677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Delivery Acceleration Plan</title>
+<link rel="stylesheet" href="style.css">
+<style>
+/* Flowchart layout */
+.fc{background:#f1f5f9;border-radius:12px;padding:2rem 2.5rem;box-shadow:0 2px 12px rgba(0,0,0,.06);overflow-x:auto}
+.fc-body{display:flex;gap:3rem;justify-content:center}
+.fc-col{display:flex;flex-direction:column;align-items:center}
+.fc-col-title{font-size:.72rem;font-weight:700;letter-spacing:.15em;color:#94a3b8;text-transform:uppercase;margin-bottom:1.2rem;white-space:nowrap}
+.fc-pair{display:flex;align-items:center;gap:0}
+/* Nodes */
+.fc-n{display:block;padding:.6rem 1rem;border-radius:8px;text-align:center;text-decoration:none;min-width:175px;box-shadow:0 1px 4px rgba(0,0,0,.04);transition:transform .12s,box-shadow .12s}
+.fc-n:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.1)}
+.fc-n b{display:block;font-size:.82rem;white-space:nowrap}
+.fc-n small{display:block;font-size:.68rem;margin-top:.15rem;opacity:.75}
+.fc-n.nc-a{background:rgba(220,38,38,.12);color:#dc2626}
+.fc-n.nc-b{background:rgba(217,119,6,.12);color:#d97706}
+.fc-n.nc-c{background:rgba(37,99,235,.12);color:#2563eb}
+.fc-n.nc-d{background:rgba(5,150,105,.12);color:#059669}
+.fc-n.nc-e{background:rgba(100,116,139,.12);color:#64748b}
+.fc-n.nc-f{background:rgba(124,58,237,.12);color:#7c3aed}
+.fc-n.nc-g{background:rgba(8,145,178,.12);color:#0891b2}
+.fc-n.nc-h{background:rgba(190,24,93,.12);color:#be185d}
+.fc-n.ngl{background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;min-width:260px;padding:.75rem 1.2rem}
+.fc-n.ngl b{font-size:.95rem}
+/* Horizontal arrow (CSS-drawn, right-pointing) */
+.fc-harr{position:relative;width:48px;height:2px;background:#94a3b8;flex-shrink:0;margin:0 .4rem;align-self:center}
+.fc-harr::after{content:'';position:absolute;right:-1px;top:-5px;border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:9px solid #94a3b8}
+/* Horizontal arrow dashed (right-pointing) */
+.fc-harr.dash{background:none;border-top:2px dashed #94a3b8;height:0}
+/* Horizontal arrow reversed (left-pointing, dashed) */
+.fc-harr.rev{background:none;border-top:2px dashed #94a3b8;height:0}
+.fc-harr.rev::after{right:auto;left:-1px;top:-6px;border-left:none;border-right:9px solid #94a3b8}
+/* Vertical arrow (CSS-drawn line + arrowhead) */
+.fc-varr{position:relative;text-align:center;padding:.5rem 0;min-height:40px;width:100%}
+.fc-varr::before{content:'';position:absolute;left:50%;top:4px;height:calc(100% - 18px);width:2px;background:#94a3b8;transform:translateX(-50%)}
+.fc-varr::after{content:'';position:absolute;left:50%;bottom:2px;transform:translateX(-50%);border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid #94a3b8}
+.fc-varr em{position:relative;z-index:1;font-style:normal;font-size:.64rem;color:#8896a7;background:#f1f5f9;padding:0 .5rem;display:inline-block;margin-top:4px}
+.fc-varr.dash::before{background:none;border-left:2px dashed #94a3b8;width:0;left:calc(50% - 1px);transform:none}
+.fc-varr.align-r::before{left:75%;transform:translateX(-50%)}
+.fc-varr.align-r::after{left:75%;transform:translateX(-50%)}
+.fc-varr.align-r.dash::before{left:75%;transform:none}
+/* Note */
+.fc-note{font-size:.64rem;color:#94a3b8;text-align:center;padding:.4rem 0;line-height:1.4}
+/* Merge: horizontal bar + shaft + arrowhead → Go-Live */
+.fc-merge{display:flex;flex-direction:column;align-items:center;margin-top:.3rem;padding-top:.5rem}
+.fc-merge-bar{width:70%;max-width:480px;height:2px;background:#94a3b8}
+.fc-merge-shaft{width:2px;height:22px;background:#94a3b8;position:relative}
+.fc-merge-shaft::after{content:'';position:absolute;bottom:-7px;left:-5px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid #94a3b8}
+/* Legend */
+.fc-legend{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem 1rem;margin-top:1.2rem;padding-top:.8rem;border-top:1px solid #d5dae2}
+.fc-legend span{font-size:.73rem;color:#475569}
+.fc-legend .badge{color:#fff}
+.fc-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:middle;font-style:normal}
+
+/* ── Gantt Timeline ── */
+.gt{background:#f8fafc;border-radius:12px;padding:1.5rem 2rem;box-shadow:0 2px 12px rgba(0,0,0,.06);overflow-x:auto;margin:1.5rem 0}
+.gt h3{margin:0 0 .2rem;font-size:1.05rem}
+.gt>p{font-size:.78rem;color:#64748b;margin:0 0 1rem}
+.gt-wrap{min-width:880px;position:relative}
+.gt-cutover{position:absolute;right:0;top:0;bottom:0;width:10px;background:transparent;cursor:col-resize;z-index:10;box-sizing:content-box}
+.gt-cutover svg{position:absolute;right:-4px;top:0;width:6px;height:100%;overflow:visible;filter:drop-shadow(2px 2px 3px rgba(0,0,0,.25))}
+.gt-cutover .cut-halo{stroke:#fff;stroke-width:5}
+.gt-cutover .cut-line{stroke:#fde68a;stroke-width:2;stroke-dasharray:6,4;opacity:.7;transition:stroke .15s,opacity .15s}
+.gt-cutover:hover .cut-line{stroke:#fcd34d;opacity:.9}
+.gt-cutover.cut-drag .cut-line{stroke:#fcd34d;stroke-dasharray:none;opacity:.9}
+.gt-cutover.cut-drag .cut-halo{}
+.gt-cutover .cut-dot{position:absolute;right:0;bottom:0;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:2px 2px 3px rgba(0,0,0,.25);transform:translate(7px,6px)}
+.gt-cutover:hover .cut-dot{background:#fff}
+.gt-cutover.cut-drag .cut-dot{background:#fff}
+.gt-cutover span{position:absolute;bottom:100%;right:0;transform:translateX(calc(50%));margin-bottom:2px;font-size:.58rem;font-weight:700;color:#dc2626;white-space:nowrap;letter-spacing:.04em;background:linear-gradient(135deg,#fef3c7,#fde68a);padding:2px 8px;border-radius:4px}
+/* Header row */
+.gt-hdr{display:grid;grid-template-columns:120px repeat(12,1fr);gap:0;margin-bottom:.15rem}
+.gt-hdr span{font-size:.65rem;font-weight:700;color:#94a3b8;text-align:center;padding:.25rem 0;letter-spacing:.06em}
+.gt-hdr span:first-child{text-align:left;color:#475569}
+/* Chain rows */
+.gt-row{display:grid;grid-template-columns:120px repeat(12,1fr);gap:0;margin-bottom:3px;align-items:center;min-height:32px}
+.gt-label{font-size:.72rem;font-weight:700;line-height:1.2;padding-right:.5rem}
+.gt-label small{display:block;font-weight:400;font-size:.62rem;opacity:.7;margin-top:1px}
+/* Segment base */
+.gt-seg{border-radius:4px;padding:2px 6px;font-size:.6rem;font-weight:600;text-align:center;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:32px;display:flex;align-items:center;justify-content:center}
+/* Active: solid fill */
+.gt-act{color:#fff}
+/* External wait: stripe pattern */
+.gt-ext{background-image:repeating-conic-gradient(rgba(255,255,255,.35) 0% 25%,transparent 0% 50%)!important;background-size:5px 5px!important;color:#fff;font-style:italic}
+/* Blocked: done but waiting for other chains */
+.gt-blk{border:2px dashed;background:transparent!important;font-style:italic;font-weight:500;font-size:.58rem}
+/* Done/Ready: white fill + solid border */
+.gt-done{background:#fff!important;border:2px solid;font-weight:700;font-size:.6rem}
+/* Critical bandwidth warning */
+.gt-crit{background:#d97706 repeating-linear-gradient(0deg,rgba(255,255,255,.22) 0,rgba(255,255,255,.22) 2.5px,transparent 2.5px,transparent 5px)!important;color:#fff!important;font-weight:700;font-size:.58rem}
+/* Row colors — 8 distinct, ordered by critical path length */
+.gc-1 .gt-act,.gc-1 .gt-ext{background-color:#dc2626}.gc-1 .gt-blk{border-color:#dc2626;color:#dc2626}.gc-1 .gt-done{border-color:#dc2626;color:#dc2626}/* A #3 */
+.gc-2 .gt-act,.gc-2 .gt-ext{background-color:#d97706}.gc-2 .gt-blk{border-color:#d97706;color:#d97706}.gc-2 .gt-done{border-color:#d97706;color:#d97706}/* B #1 */
+.gc-3 .gt-act,.gc-3 .gt-ext{background-color:#2563eb}.gc-3 .gt-blk{border-color:#2563eb;color:#2563eb}.gc-3 .gt-done{border-color:#2563eb;color:#2563eb}/* C #5 */
+.gc-4 .gt-act,.gc-4 .gt-ext{background-color:#059669}.gc-4 .gt-blk{border-color:#059669;color:#059669}.gc-4 .gt-done{border-color:#059669;color:#059669}/* D #7 */
+.gc-5 .gt-act,.gc-5 .gt-ext{background-color:#64748b}.gc-5 .gt-blk{border-color:#64748b;color:#64748b}.gc-5 .gt-done{border-color:#64748b;color:#64748b}/* E #8 */
+.gc-6 .gt-act,.gc-6 .gt-ext{background-color:#7c3aed}.gc-6 .gt-blk{border-color:#7c3aed;color:#7c3aed}.gc-6 .gt-done{border-color:#7c3aed;color:#7c3aed}/* F #4 */
+.gc-7 .gt-act,.gc-7 .gt-ext{background-color:#0891b2}.gc-7 .gt-blk{border-color:#0891b2;color:#0891b2}.gc-7 .gt-done{border-color:#0891b2;color:#0891b2}/* G #6 */
+.gc-8 .gt-act,.gc-8 .gt-ext{background-color:#be185d}.gc-8 .gt-blk{border-color:#be185d;color:#be185d}.gc-8 .gt-done{border-color:#be185d;color:#be185d}/* H #2 */
+/* Go-Live convergence row */
+.gt-conv{display:grid;grid-template-columns:120px repeat(12,1fr);gap:0;margin-top:0;align-items:center;min-height:32px}
+.gt-conv-bar{grid-column:12/14;background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:4px;padding:2px 6px;font-size:.6rem;font-weight:700;color:#92400e;text-align:center;min-height:32px;display:flex;align-items:center;justify-content:center}
+/* Convergence lines */
+.gt-conv-zone{position:relative;grid-column:11/12;display:flex;align-items:center;justify-content:flex-end}
+.gt-conv-zone::after{content:'';display:block;width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:8px solid #d97706}
+/* Annotations */
+.gt-notes{margin-top:1rem;padding-top:.8rem;border-top:1px solid #e2e8f0}
+.gt-notes li{font-size:.72rem;color:#475569;margin-bottom:.35rem;line-height:1.5}
+.gt-notes li b{color:#1e293b}
+.gt-notes li em{font-style:normal;background:#fef2f2;color:#dc2626;padding:.1rem .4rem;border-radius:3px;font-size:.66rem;font-weight:600}
+/* Gantt legend */
+.gt-legend{display:flex;gap:1.2rem;flex-wrap:wrap;margin-top:.8rem;padding-top:.6rem;border-top:1px solid #e2e8f0}
+.gt-legend span{font-size:.68rem;color:#475569;display:flex;align-items:center;gap:4px}
+.gt-legend i{display:inline-block;width:28px;height:12px;border-radius:3px;font-style:normal}
+.gt-legend i.leg-ext{background:#d97706;background-image:repeating-conic-gradient(rgba(255,255,255,.35) 0% 25%,transparent 0% 50%);background-size:5px 5px}
+.gt-legend i.leg-blk{background:transparent;border:2px dashed #7c3aed}
+.gt-legend i.leg-crit{background:#d97706;background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.22) 0,rgba(255,255,255,.22) 2.5px,transparent 2.5px,transparent 5px)}
+/* SVG overlay for dependency arcs */
+.g2-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5;overflow:visible;filter:drop-shadow(2px 2px 3px rgba(0,0,0,.25))}
+.g2-hl{box-shadow:0 0 0 2px rgba(217,119,6,.5)!important}
+
+/* ── RACI Matrix ── */
+.raci{background:#f8fafc;border-radius:12px;padding:1.5rem 2rem;box-shadow:0 2px 12px rgba(0,0,0,.06);overflow-x:auto;margin:1.5rem 0}
+.raci h3{margin:0 0 .2rem;font-size:1.05rem}
+.raci>p{font-size:.76rem;color:#64748b;margin:0 0 1rem}
+.raci table{width:100%;border-collapse:collapse;font-size:.72rem;min-width:960px;table-layout:fixed}
+.raci col.col-blocker{width:12%}
+.raci col.col-eq{width:8%}
+.raci thead th{background:#f1f5f9;font-weight:700;color:#475569;font-size:.66rem;white-space:normal;word-break:break-word;padding:.5rem .3rem;border-bottom:2px solid #cbd5e1;text-align:center}
+.raci colgroup.cg-team{border-left:2px solid #cbd5e1;border-right:2px solid #cbd5e1}
+.raci .th-group{background:#e2e8f0;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:#64748b;padding:.3rem .2rem}
+.raci tbody td,.raci tbody th{padding:.45rem .4rem;border-bottom:1px solid #e2e8f0;text-align:center;vertical-align:middle}
+.raci tbody th{text-align:left;font-weight:600;white-space:normal;word-break:break-word}
+.raci tbody th a{color:inherit;text-decoration:none;border-bottom:1px dashed #94a3b8}
+.raci tbody th a:hover{color:#2563eb;border-bottom-color:#2563eb}
+.raci tbody tr:hover{background:#f1f5f9}
+.raci tbody td small{display:block;font-size:.58rem;color:#64748b;margin-top:1px;line-height:1.2}
+/* RACI badges */
+.rb{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:5px;font-size:.68rem;font-weight:800;color:#fff}
+.rb-r{background:#2563eb}
+.rb-a{background:#dc2626}
+.rb-c{background:#d97706}
+.rb-i{background:#94a3b8}
+/* RACI legend */
+.raci-legend{display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:.8rem;padding-top:.6rem;border-top:1px solid #e2e8f0}
+.raci-legend span{font-size:.7rem;color:#475569;display:flex;align-items:center;gap:5px}
+.raci-legend .rb{color:#fff}
+/* RACI insights */
+.raci-notes{margin-top:.8rem;padding-top:.6rem;border-top:1px solid #e2e8f0}
+.raci-notes li{font-size:.72rem;color:#475569;margin-bottom:.3rem;line-height:1.5}
+.raci-notes li b{color:#1e293b}
+/* Chain color left-border on RACI rows */
+.raci tbody tr{border-left:3px solid transparent}
+.rc-1{border-left-color:#dc2626!important}/* A #3 */
+.rc-2{border-left-color:#d97706!important}/* B #1 */
+.rc-3{border-left-color:#2563eb!important}/* C #5 */
+.rc-4{border-left-color:#059669!important}/* D #7 */
+.rc-5{border-left-color:#64748b!important}/* E #8 */
+.rc-6{border-left-color:#7c3aed!important}/* F #4 */
+.rc-7{border-left-color:#0891b2!important}/* G #6 */
+.rc-8{border-left-color:#be185d!important}/* H #2 */
+.raci tbody th .chain-tag{display:inline-block;font-size:.56rem;font-weight:800;color:#fff;border-radius:3px;padding:0 4px;line-height:1.5;margin-right:2px;vertical-align:middle}
+
+/* ── Architecture Diagram ── */
+.arch{background:#f8fafc;border-radius:12px;padding:1.5rem 2rem;box-shadow:0 2px 12px rgba(0,0,0,.06);margin:1.5rem 0}
+.arch h3{margin:0 0 .2rem;font-size:1.05rem}
+.arch>p{font-size:.78rem;color:#64748b;margin:0 0 1rem}
+.arch img{width:100%;height:auto;display:block;border-radius:6px}
+
+/* ── Business Outcomes at Risk ── */
+.biz{background:#f8fafc;border-radius:12px;padding:1.5rem 2rem;box-shadow:0 2px 12px rgba(0,0,0,.06);margin:1.5rem 0}
+.biz h3{margin:0 0 .2rem;font-size:1.05rem}
+.biz>p{font-size:.78rem;color:#64748b;margin:0 0 1rem}
+.biz-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.biz-card{border-radius:8px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.07);display:flex;flex-direction:column;transition:transform .12s,box-shadow .12s}
+.biz-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.1)}
+.biz-card-body{background:#fff;padding:.9rem 1rem;flex:1}
+.biz-card-body b{display:block;font-size:.88rem;color:#1e293b;margin-bottom:.35rem}
+.biz-card-body span{font-size:.74rem;color:#475569;line-height:1.5}
+.biz-card-tag{background:#b91c1c;padding:.45rem .8rem;font-size:.72rem;font-weight:700;color:#fff;letter-spacing:.06em}
+
+/* ── Side Nav ── */
+.snav-btn{position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:200;width:28px;height:54px;background:var(--accent);color:#fff;border:none;border-radius:0 6px 6px 0;cursor:pointer;font-size:.85rem;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:1px 2px 8px rgba(0,0,0,.15);opacity:.45;transition:opacity .2s,width .15s}
+.snav-btn:hover{opacity:.85}
+.snav-btn.open{opacity:.9}
+/* Panel */
+.snav-panel{position:fixed;left:0;top:0;bottom:0;width:220px;background:#fff;box-shadow:3px 0 24px rgba(0,0,0,.12);z-index:199;transform:translateX(-100%);transition:transform .25s ease;display:flex;flex-direction:column;padding:1.5rem 0}
+.snav-panel.open{transform:translateX(0)}
+.snav-panel .snav-title{font-size:.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;padding:0 1.2rem .6rem;border-bottom:1px solid var(--border)}
+.snav-panel a{display:flex;align-items:center;gap:.5rem;padding:.55rem 1.2rem;font-size:.82rem;font-weight:500;color:var(--text2);text-decoration:none;transition:background .12s,color .12s;border-left:3px solid transparent}
+.snav-panel a:hover{background:#f1f5f9;color:var(--accent)}
+.snav-panel a.active{background:#f1f5f9;color:var(--accent);font-weight:700;border-left-color:var(--accent)}
+.snav-panel a .snav-num{font-size:.65rem;font-weight:700;color:var(--text3);min-width:14px}
+/* Backdrop */
+.snav-backdrop{position:fixed;inset:0;z-index:198;background:rgba(0,0,0,.08);opacity:0;pointer-events:none;transition:opacity .25s}
+.snav-backdrop.open{opacity:1;pointer-events:auto}
+</style>
+</head>
+<body>
+
+<!-- ===== Cover ===== -->
+<div style="text-align:center;margin:1.5rem 0">
+<img src="first.png" alt="Cloud Delivery Acceleration Plan — Structured approach to recover stalled workload, resolve technical blockers, and secure critical business outcomes. Prepared for VP of Operations &amp; Head of Cloud Delivery" style="max-width:100%;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.06)">
+</div>
+
+<!-- ===== Architecture Diagram ===== -->
+<h2 id="sec-arch">1. 问题对齐 — 卡点在哪里</h2>
+<div class="arch">
+<p>数据从 On-Prem 经 Dedicated Interconnect 进入 GCP，红色标注为当前卡点。</p>
+<img src="architecture.png" alt="GCP Architecture Diagram — On-Prem Source → Dedicated Interconnect → Google Cloud Platform (VPC, Pipeline, BigQuery) with Blocker indicators">
+</div><!-- /arch -->
+
+<!-- ===== Acceleration Method ===== -->
+<h2 id="sec-method">2. 加速步骤 — 排除卡点的推进方法</h2>
+<div style="background:#f8fafc;border-radius:12px;padding:1.5rem 2rem;box-shadow:0 2px 12px rgba(0,0,0,.06);margin:1.5rem 0">
+<p style="font-size:.78rem;color:#64748b;margin:0 0 1rem">对每个卡点，统一用五步闭环推进 — 从现象到落地，不跳步、不空转。</p>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1rem">
+
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #2563eb">
+    <div style="font-size:.65rem;font-weight:700;color:#2563eb;letter-spacing:.08em;margin-bottom:.4rem">步骤一</div>
+    <b style="font-size:.88rem;color:#1e293b;display:block;margin-bottom:.5rem">什么事情</b>
+    <span style="font-size:.72rem;color:#475569;line-height:1.5">明确现象和影响范围 — 不是模糊感觉，而是可观测的症状和数据</span>
+    <div style="margin-top:.6rem;padding-top:.5rem;border-top:1px solid #e2e8f0;font-size:.72rem;line-height:1.9">
+      <a href="#sec-arch" style="display:block;color:#2563eb;text-decoration:none">1. 问题对齐</a>
+      <a href="#sec-dep" style="display:block;color:#2563eb;text-decoration:none">3. 初步判断</a>
+      <a href="#sec-biz" style="display:block;color:#2563eb;text-decoration:none">4. 业务影响</a>
+    </div>
+  </div>
+
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #7c3aed">
+    <div style="font-size:.65rem;font-weight:700;color:#7c3aed;letter-spacing:.08em;margin-bottom:.4rem">步骤二</div>
+    <b style="font-size:.88rem;color:#1e293b;display:block;margin-bottom:.5rem">和谁相关</b>
+    <span style="font-size:.72rem;color:#475569;line-height:1.5">定位涉及的团队、系统和决策人 — 对应 RACI 矩阵的 R 和 A</span>
+    <div style="margin-top:.6rem;padding-top:.5rem;border-top:1px solid #e2e8f0;font-size:.72rem;line-height:1.9">
+      <a href="#sec-raci" style="display:block;color:#7c3aed;text-decoration:none">5. 责任矩阵</a>
+    </div>
+  </div>
+
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #d97706">
+    <div style="font-size:.65rem;font-weight:700;color:#d97706;letter-spacing:.08em;margin-bottom:.4rem">步骤三</div>
+    <b style="font-size:.88rem;color:#1e293b;display:block;margin-bottom:.5rem">怀疑什么</b>
+    <span style="font-size:.72rem;color:#475569;line-height:1.5">形成假设 — 列出可能的根因，按概率和影响排序，不发散</span>
+    <div style="margin-top:.6rem;padding-top:.5rem;border-top:1px solid #e2e8f0;font-size:.72rem;line-height:1.9">
+      <a href="#sec-hyp" style="display:block;color:#d97706;text-decoration:none">6. 根因假设</a>
+    </div>
+  </div>
+
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #059669">
+    <div style="font-size:.65rem;font-weight:700;color:#059669;letter-spacing:.08em;margin-bottom:.4rem">步骤四</div>
+    <b style="font-size:.88rem;color:#1e293b;display:block;margin-bottom:.5rem">怎么排查</b>
+    <span style="font-size:.72rem;color:#475569;line-height:1.5">设计验证实验 — 用最小成本确认或排除假设，Day 1 就能动手</span>
+    <div style="margin-top:.6rem;padding-top:.5rem;border-top:1px solid #e2e8f0;font-size:.72rem;line-height:1.9">
+      <a href="#sec-disc" style="display:block;color:#059669;text-decoration:none">7. 发现框架</a>
+    </div>
+  </div>
+
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #dc2626">
+    <div style="font-size:.65rem;font-weight:700;color:#dc2626;letter-spacing:.08em;margin-bottom:.4rem">步骤五</div>
+    <b style="font-size:.88rem;color:#1e293b;display:block;margin-bottom:.5rem">如何解决</b>
+    <span style="font-size:.72rem;color:#475569;line-height:1.5">评估优先级，制定执行计划 — 明确产出物、负责人和完成时间，进入时间线跟踪</span>
+    <div style="margin-top:.6rem;padding-top:.5rem;border-top:1px solid #e2e8f0;font-size:.72rem;line-height:1.9">
+      <a href="#sec-list" style="display:block;color:#dc2626;text-decoration:none">8. 严重等级</a>
+      <a href="#sec-gantt" style="display:block;color:#dc2626;text-decoration:none">9. 并行链路</a>
+      <a href="#sec-compress" style="display:block;color:#dc2626;text-decoration:none">10. 链路压缩</a>
+      <a href="#sec-phase" style="display:block;color:#dc2626;text-decoration:none">11. 持续交付</a>
+      <a href="#sec-growth" style="display:block;color:#dc2626;text-decoration:none">12. 爬坡节奏</a>
+      <a href="#sec-gov" style="display:block;color:#dc2626;text-decoration:none">13. 风险管控</a>
+      <a href="#sec-kickoff" style="display:block;color:#dc2626;text-decoration:none">14. 启动大会</a>
+      <a href="#sec-day1" style="display:block;color:#dc2626;text-decoration:none">15. 即刻行动</a>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ===== Side Nav ===== -->
+<button class="snav-btn" id="snavBtn" aria-label="导航">&#9776;</button>
+<div class="snav-backdrop" id="snavBg"></div>
+<nav class="snav-panel" id="snavPanel">
+  <div class="snav-title">章节导航</div>
+  <a href="#sec-arch"><span class="snav-num">1</span>问题对齐</a>
+  <a href="#sec-method"><span class="snav-num">2</span>加速步骤</a>
+  <a href="#sec-dep"><span class="snav-num">3</span>初步判断</a>
+  <a href="#sec-biz"><span class="snav-num">4</span>业务影响</a>
+  <a href="#sec-raci"><span class="snav-num">5</span>责任矩阵</a>
+  <a href="#sec-hyp"><span class="snav-num">6</span>根因假设</a>
+  <a href="#sec-disc"><span class="snav-num">7</span>发现框架</a>
+  <a href="#sec-list"><span class="snav-num">8</span>严重等级</a>
+  <a href="#sec-gantt"><span class="snav-num">9</span>并行链路</a>
+  <a href="#sec-compress"><span class="snav-num">10</span>链路压缩</a>
+  <a href="#sec-phase"><span class="snav-num">11</span>持续交付</a>
+  <a href="#sec-growth"><span class="snav-num">12</span>爬坡节奏</a>
+  <a href="#sec-gov"><span class="snav-num">13</span>风险管控</a>
+  <a href="#sec-kickoff"><span class="snav-num">14</span>启动大会</a>
+  <a href="#sec-day1"><span class="snav-num">15</span>即刻行动</a>
+</nav>
+
+<!-- ===== Dependency Flowchart ===== -->
+<h2 id="sec-dep">3. 初步判断 — 两条链路的依赖与优先级</h2>
+<div class="fc">
+<div class="fc-body">
+  <!-- Tech Chain (left, taller) -->
+  <div class="fc-col">
+    <div class="fc-col-title">── Technical Chain ──</div>
+
+    <div class="fc-pair">
+      <a href="blocker1.html" class="fc-n nc-b"><b>#1 Interconnect</b><small><span class="badge badge-p0" style="font-size:.55rem;padding:0 4px">P0-长线</span> Day1 诊断 + 联系运营商</small></a>
+      <div class="fc-harr dash"></div>
+      <a href="blocker5.html" class="fc-n nc-c"><b>#5 Pipeline Latency</b><small><span class="badge badge-p0" style="font-size:.55rem;padding:0 4px">P0-短线</span> 子集数据 Day1 profiling</small></a>
+    </div>
+
+    <div class="fc-varr dash align-r"></div>
+
+    <div class="fc-pair">
+      <a href="blocker7.html" class="fc-n nc-d"><b>#7 BigQuery Cost</b><small><span class="badge badge-p2" style="font-size:.55rem;padding:0 4px">P2-快赢</span> 子集 SQL 即可诊断</small></a>
+      <div class="fc-harr rev"></div>
+      <a href="blocker6.html" class="fc-n nc-g"><b>#6 Region Resources</b><small><span class="badge badge-p1" style="font-size:.55rem;padding:0 4px">P1-触发</span> Day1 诊断 + 提交 quota</small></a>
+    </div>
+
+    <div class="fc-varr"></div>
+
+    <a href="blocker4.html" class="fc-n nc-f"><b>#4 DBA Engagement</b><small><span class="badge badge-p1" style="font-size:.55rem;padding:0 4px">P1-协调</span> Day1 技术准备 + VP 协调</small></a>
+
+    <div class="fc-varr"></div>
+
+    <a href="blocker8.html" class="fc-n nc-e"><b>#8 User Adoption</b><small><span class="badge badge-h3" style="font-size:.55rem;padding:0 4px">P2-后台</span> Day1 后台收集 · W4+ 主动验证</small></a>
+  </div>
+
+  <!-- Approval Chain (right, shorter, bottom-aligned) -->
+  <div class="fc-col" style="align-self:flex-end">
+    <div class="fc-col-title">── Approval Chain ──</div>
+
+    <a href="blocker2.html" class="fc-n nc-h"><b>#2 Security Controls</b><small><span class="badge badge-p1" style="font-size:.55rem;padding:0 4px">P1-短线</span> Org Policy · VPC-SC · IAM</small></a>
+
+    <div class="fc-varr"></div>
+
+    <a href="blocker3.html" class="fc-n nc-a"><b>#3 Security Review</b><small><span class="badge badge-p0" style="font-size:.55rem;padding:0 4px">P0-长线</span> Go-Live 硬门槛 · 日历最长瓶颈</small></a>
+
+  </div>
+</div>
+
+<!-- Convergence: horizontal bar + shaft + arrowhead → Go-Live -->
+<div class="fc-merge">
+  <div class="fc-merge-bar"></div>
+  <div class="fc-merge-shaft"></div>
+  <div style="height:12px"></div>
+  <div class="fc-n ngl"><b>★ Production Go-Live ★</b><small>两条链路全部完成方可上线</small></div>
+</div>
+
+<!-- Legend -->
+<div class="fc-legend">
+  <span><span class="badge badge-p0" style="font-size:.6rem;padding:1px 5px">P0-长线</span> 不可压缩的硬约束，Go-Live 双重瓶颈</span>
+  <span><span class="badge badge-p0" style="font-size:.6rem;padding:1px 5px">P0-短线</span> 技术不确定性高，需立即诊断</span>
+  <span><span class="badge badge-p1" style="font-size:.6rem;padding:1px 5px">P1-快赢</span> 低成本快速见效，提振信心</span>
+  <span><span class="badge badge-p1" style="font-size:.6rem;padding:1px 5px">P1-后台</span> 后台采集数据，后期主动推进</span>
+  <span><span class="badge badge-p1" style="font-size:.6rem;padding:1px 5px">P1-协调</span> 需跨团队拉齐人员和资源</span>
+  <span><span class="badge badge-p1" style="font-size:.6rem;padding:1px 5px">P1-触发</span> Day 1 提交申请，等外部响应</span>
+  <span><span class="badge badge-p1" style="font-size:.6rem;padding:1px 5px">P1-短线</span> 产出直接喂给 P0 上游</span>
+</div>
+</div>
+
+<!-- ===== Business Outcomes at Risk ===== -->
+<h2 id="sec-biz">4. 业务影响 — 延后的代价是什么</h2>
+<div class="biz">
+<p>当前阻塞项对客户业务层面的六大影响维度 — 拖延越久影响面越大。</p>
+<div class="biz-grid">
+
+  <div class="biz-card">
+    <div class="biz-card-body">
+      <b>按时上线</b>
+      <span>当前停滞危及已承诺的上线窗口及与终端客户相关的合同里程碑。</span>
+    </div>
+    <div class="biz-card-tag">营收影响</div>
+  </div>
+
+  <div class="biz-card">
+    <div class="biz-card-body">
+      <b>服务体验</b>
+      <span>高 P95 延迟和错误率直接损害用户满意度，增加用户流失和品牌声誉风险。</span>
+    </div>
+    <div class="biz-card-tag">SLA 违约风险</div>
+  </div>
+
+  <div class="biz-card">
+    <div class="biz-card-body">
+      <b>运维韧性</b>
+      <span>频繁的人工干预和高 MTTR 使运维团队无法转入稳态支持模式。</span>
+    </div>
+    <div class="biz-card-tag">团队过劳风险</div>
+  </div>
+
+  <div class="biz-card">
+    <div class="biz-card-body">
+      <b>数据合规</b>
+      <span>策略执行和访问控制不完整，可能使组织面临监管审计发现的风险。</span>
+    </div>
+    <div class="biz-card-tag">审计不通过风险</div>
+  </div>
+
+  <div class="biz-card">
+    <div class="biz-card-body">
+      <b>成本控制</b>
+      <span>低效的资源使用（通过超配掩盖延迟问题）正在推高运行成本，却未产出交付价值。</span>
+    </div>
+    <div class="biz-card-tag">预算超支</div>
+  </div>
+
+  <div class="biz-card">
+    <div class="biz-card-body">
+      <b>团队产能</b>
+      <span>长期"战时状态"消耗工程团队产能，挤占新功能开发资源，拖延产品路线图。</span>
+    </div>
+    <div class="biz-card-tag">路线图延误</div>
+  </div>
+
+</div>
+</div><!-- /biz -->
+
+<!-- ===== RACI Matrix ===== -->
+<h2 id="sec-raci">5. 责任矩阵 — 谁推动哪件事</h2>
+<div class="raci">
+<p>每行一个 Blocker，列按组织层级排列：客户决策层 → 客户六大团队 → Google → 合作伙伴。</p>
+<div style="overflow-x:auto">
+<table>
+<colgroup>
+  <col class="col-blocker">
+  <col class="col-eq"><col class="col-eq">
+</colgroup>
+<colgroup class="cg-team">
+  <col class="col-eq"><col class="col-eq"><col class="col-eq">
+  <col class="col-eq"><col class="col-eq"><col class="col-eq">
+</colgroup>
+<colgroup>
+  <col class="col-eq"><col class="col-eq"><col class="col-eq"><col class="col-eq">
+</colgroup>
+<thead>
+<tr>
+  <th rowspan="2">Blocker</th>
+  <th rowspan="2">VP of<br>Operations</th>
+  <th rowspan="2">Head of<br>Cloud Delivery</th>
+  <th colspan="6" class="th-group">—— 客户执行团队 ——</th>
+  <th rowspan="2">Outcome CE</th>
+  <th rowspan="2">Google CE /<br>TAM / Support</th>
+  <th rowspan="2">SI / ISV</th>
+  <th rowspan="2">运营商</th>
+</tr>
+<tr>
+  <th>研发</th>
+  <th>数据</th>
+  <th>算法</th>
+  <th>测试</th>
+  <th>运维</th>
+  <th>安全</th>
+</tr>
+</thead>
+<tbody>
+
+<tr class="rc-1">
+  <th><a href="blocker3.html" style="color:#dc2626">#3 Security Review</a></th>
+  <td><span class="rb rb-a">A</span><small>最终签字</small></td>
+  <td><span class="rb rb-a">A</span><small>技术证据</small></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><span class="rb rb-r">R</span><small>审批执行</small></td>
+  <td><span class="rb rb-r">R</span><small>材料准备</small></td>
+  <td><span class="rb rb-c">C</span><small>TAM+Specialist</small></td>
+  <td></td>
+  <td></td>
+</tr>
+
+<tr class="rc-2">
+  <th><a href="blocker1.html" style="color:#d97706">#1 Interconnect</a></th>
+  <td><span class="rb rb-i">I</span></td>
+  <td><span class="rb rb-a">A</span><small>网络性能</small></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><span class="rb rb-r">R</span><small>网络工程</small></td>
+  <td></td>
+  <td><span class="rb rb-r">R</span><small>诊断指导</small></td>
+  <td><span class="rb rb-c">C</span><small>TAM / SLA</small></td>
+  <td></td>
+  <td><span class="rb rb-r">R</span><small>专线带宽</small></td>
+</tr>
+
+<tr class="rc-3">
+  <th><a href="blocker5.html" style="color:#2563eb">#5 Pipeline Latency</a></th>
+  <td><span class="rb rb-i">I</span></td>
+  <td><span class="rb rb-a">A</span><small>性能目标</small></td>
+  <td><span class="rb rb-r">R</span><small>代码修复</small></td>
+  <td><span class="rb rb-c">C</span><small>数据流</small></td>
+  <td><span class="rb rb-c">C</span><small>处理逻辑</small></td>
+  <td><span class="rb rb-c">C</span><small>性能验证</small></td>
+  <td></td>
+  <td></td>
+  <td><span class="rb rb-r">R</span><small>诊断+调优</small></td>
+  <td><span class="rb rb-c">C</span><small>TAM+Pre-sales</small></td>
+  <td><span class="rb rb-r">R</span><small>代码修改</small></td>
+  <td></td>
+</tr>
+
+<tr class="rc-4">
+  <th><a href="blocker7.html" style="color:#059669">#7 BigQuery Cost</a></th>
+  <td><span class="rb rb-i">I</span><small>成本报告</small></td>
+  <td><span class="rb rb-a">A</span><small>成本目标</small></td>
+  <td></td>
+  <td><span class="rb rb-r">R</span><small>查询优化</small></td>
+  <td><span class="rb rb-c">C</span><small>查询逻辑</small></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><span class="rb rb-r">R</span><small>优化建议</small></td>
+  <td><span class="rb rb-c">C</span><small>TAM / Pricing</small></td>
+  <td></td>
+  <td></td>
+</tr>
+
+<tr class="rc-5">
+  <th><a href="blocker8.html" style="color:#64748b">#8 User Adoption</a></th>
+  <td><span class="rb rb-a">A</span><small>授权+关停</small></td>
+  <td><span class="rb rb-c">C</span><small>技术就绪</small></td>
+  <td><span class="rb rb-c">C</span><small>工具适配</small></td>
+  <td></td>
+  <td></td>
+  <td><span class="rb rb-c">C</span><small>UAT</small></td>
+  <td></td>
+  <td></td>
+  <td><span class="rb rb-r">R</span><small>采用框架</small></td>
+  <td><span class="rb rb-i">I</span><small>TAM</small></td>
+  <td><span class="rb rb-c">C</span><small>Training</small></td>
+  <td></td>
+</tr>
+
+<tr class="rc-6">
+  <th><a href="blocker4.html" style="color:#7c3aed">#4 DBA Engagement</a></th>
+  <td><span class="rb rb-c">C</span><small>调配 DBA</small></td>
+  <td><span class="rb rb-a">A</span><small>验证方法论</small></td>
+  <td><span class="rb rb-c">C</span><small>Schema 适配</small></td>
+  <td><span class="rb rb-r">R</span><small>DBA Lead</small></td>
+  <td></td>
+  <td><span class="rb rb-c">C</span><small>数据校验</small></td>
+  <td></td>
+  <td><span class="rb rb-i">I</span><small>数据合规</small></td>
+  <td><span class="rb rb-r">R</span><small>框架+脚本</small></td>
+  <td><span class="rb rb-c">C</span><small>Pre-sales CE</small></td>
+  <td><span class="rb rb-c">C</span><small>DBA 替补</small></td>
+  <td></td>
+</tr>
+
+<tr class="rc-7">
+  <th><a href="blocker6.html" style="color:#0891b2">#6 Region Resources</a></th>
+  <td><span class="rb rb-i">I</span></td>
+  <td><span class="rb rb-a">A</span><small>Region 决策</small></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><span class="rb rb-r">R</span><small>资源规划</small></td>
+  <td><span class="rb rb-c">C</span><small>数据驻留</small></td>
+  <td><span class="rb rb-r">R</span><small>评估+建议</small></td>
+  <td><span class="rb rb-c">C</span><small>TAM / 容量</small></td>
+  <td></td>
+  <td></td>
+</tr>
+
+<tr class="rc-8">
+  <th><a href="blocker2.html" style="color:#be185d">#2 Security Controls</a></th>
+  <td><span class="rb rb-i">I</span></td>
+  <td><span class="rb rb-a">A</span><small>配置审批</small></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><span class="rb rb-r">R</span><small>Cloud Admin</small></td>
+  <td><span class="rb rb-c">C</span><small>Org Policy</small></td>
+  <td><span class="rb rb-r">R</span><small>审计+指导</small></td>
+  <td><span class="rb rb-c">C</span><small>Specialist CE</small></td>
+  <td></td>
+  <td></td>
+</tr>
+
+</tbody>
+</table>
+</div>
+
+<!-- RACI legend -->
+<div class="raci-legend">
+  <span><span class="rb rb-r">R</span> Responsible 负责执行</span>
+  <span><span class="rb rb-a">A</span> Accountable 最终问责</span>
+  <span><span class="rb rb-c">C</span> Consulted 需咨询</span>
+  <span><span class="rb rb-i">I</span> Informed 需知会</span>
+</div>
+
+<!-- RACI insights -->
+<ul class="raci-notes">
+  <li><b>VP of Operations 是两个非技术瓶颈的决策者</b> — #3 安全审批最终签字 + #8 变更管理授权与旧系统关停</li>
+  <li><b>Head of Cloud Delivery 承担 6 项 A</b> — 技术类 Blocker (#1-#2, #4-#7) 的最终问责人</li>
+  <li><b>研发 + 数据 + 算法 是 #5 Pipeline 的主力</b> — 三个团队协同诊断代码、数据流和处理逻辑</li>
+  <li><b>运维承担 #1 网络 + #2 安全配置 + #6 资源</b> — 基础设施类 Blocker 的核心执行方</li>
+  <li><b>安全团队在 #3 承担唯一客户侧 R</b> — 审批执行权在安全团队手中，其余 Blocker 以 C/I 协同</li>
+  <li><b>Outcome CE 全线 R</b> — 每个 Blocker 的诊断框架和执行指导</li>
+  <li><b>SI / ISV 在 #4 和 #5 提供关键支持</b> — DBA 替补 + Pipeline 代码修改</li>
+</ul>
+</div>
+
+<!-- ===== Hypotheses ===== -->
+<h2 id="sec-hyp">6. 根因假设 — 为什么停滞？两个方向的调查假设</h2>
+<div style="background:#f8fafc;border-radius:12px;padding:1.5rem 2rem;box-shadow:0 2px 12px rgba(0,0,0,.06);margin:1.5rem 0">
+<p style="font-size:.78rem;color:#64748b;margin:0 0 1rem">项目停滞的根因不一定是单一维度。我们从技术和组织两个方向建立假设，逐一验证排除，避免"只修技术却忽略人和流程"。</p>
+
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem">
+
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #2563eb">
+    <div style="font-size:.7rem;font-weight:700;color:#2563eb;letter-spacing:.06em;margin-bottom:.3rem">H1 · 技术与基建</div>
+    <p style="font-size:.72rem;color:#475569;line-height:1.6;margin:0 0 .6rem">硬件、网络、平台配置等技术层面的问题阻碍了系统正常运行——系统"跑不起来"。<br>应用代码效率不足——未针对云环境优化，存在性能热点和资源浪费。<br>云架构设计未调优——资源配置、查询模式、计费模式未匹配实际负载特征。</p>
+    <div style="margin-top:.6rem;padding-top:.4rem;border-top:1px solid #e2e8f0;font-size:.7rem;color:#475569;line-height:1.8">
+      <a href="blocker1.html" style="color:#d97706;font-weight:700;text-decoration:none;border-bottom:1px dashed #d97706">#1 Interconnect</a> — 网络带宽不足，数据传输受阻<br>
+      <a href="blocker2.html" style="color:#be185d;font-weight:700;text-decoration:none;border-bottom:1px dashed #be185d">#2 Security Controls</a> — 安全策略配置阻断合法流量<br>
+      <a href="blocker5.html" style="color:#2563eb;font-weight:700;text-decoration:none;border-bottom:1px dashed #2563eb">#5 Pipeline Latency</a> — 数据处理管道性能不达标<br>
+      <a href="blocker6.html" style="color:#0891b2;font-weight:700;text-decoration:none;border-bottom:1px dashed #0891b2">#6 Region Resources</a> — 区域资源配额不足<br>
+      <a href="blocker7.html" style="color:#059669;font-weight:700;text-decoration:none;border-bottom:1px dashed #059669">#7 BigQuery Cost</a> — 查询效率低、成本高于预期
+    </div>
+  </div>
+
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #d97706">
+    <div style="font-size:.7rem;font-weight:700;color:#d97706;letter-spacing:.06em;margin-bottom:.3rem">H2 · 组织与流程</div>
+    <p style="font-size:.72rem;color:#475569;line-height:1.6;margin:0 0 .6rem">技术之外的组织障碍——审批流程卡住、关键角色缺位、用户未迁移，系统"能跑但不让跑、没人用"。<br>系统可用后用户仍未迁移——培训不足、变更管理缺失、业务流程未适配。</p>
+    <div style="margin-top:.6rem;padding-top:.4rem;border-top:1px solid #e2e8f0;font-size:.7rem;color:#475569;line-height:1.8">
+      <a href="blocker3.html" style="color:#dc2626;font-weight:700;text-decoration:none;border-bottom:1px dashed #dc2626">#3 Security Review</a> — 安全审批停滞，Go-Live 硬门槛<br>
+      <a href="blocker4.html" style="color:#7c3aed;font-weight:700;text-decoration:none;border-bottom:1px dashed #7c3aed">#4 DBA Engagement</a> — DBA 团队未参与，数据验证无人执行<br>
+      <a href="blocker8.html" style="color:#64748b;font-weight:700;text-decoration:none;border-bottom:1px dashed #64748b">#8 User Adoption</a> — 终端用户未切换到新系统
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ===== Discovery Framework ===== -->
+<h2 id="sec-disc">7. 发现框架 — 从表象到根因的诊断路径</h2>
+<div style="background:#f8fafc;border-radius:12px;padding:1.5rem 2rem;box-shadow:0 2px 12px rgba(0,0,0,.06);margin:1.5rem 0">
+<p style="font-size:.78rem;color:#64748b;margin:0 0 1rem">停滞的表象（延迟高、吞吐低）不等于根因。我们通过技术诊断和流程诊断双线并行，穿透表象定位真正的阻塞原因，避免"头痛医头"。</p>
+
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:1rem">
+
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #2563eb">
+    <div style="font-size:.7rem;font-weight:700;color:#2563eb;letter-spacing:.06em;margin-bottom:.4rem">技术诊断 — 用数据定位瓶颈</div>
+    <ul style="font-size:.72rem;color:#475569;line-height:1.7;padding-left:1rem;margin:0">
+      <li><b>网络层</b> — 端到端吞吐量测试、逐跳延迟分解、MTU/BGP 配置检查，区分运营商限速 vs GCP 入口瓶颈</li>
+      <li><b>安全层</b> — Org Policy 全量扫描、VPC-SC 审计日志分析、IAM 权限 Gap 分析、合规报告生成</li>
+      <li><b>计算层</b> — Pipeline Job Profiling（stage 级耗时、data skew）、Cloud Trace 端到端延迟分解、代码级热点分析</li>
+      <li><b>存储层</b> — BigQuery INFORMATION_SCHEMA 分析 top 高耗查询、分区/聚簇配置审查、Slot 利用率趋势</li>
+      <li><b>资源层</b> — Quota 使用率检查、目标机型可用性测试、GKE Autoscaler 配置审计、容量需求反推测算</li>
+      <li><b>数据层</b> — Schema 映射完整度检查、数据类型转换规则确认、自动化验证脚本可行性评估</li>
+    </ul>
+    <div style="margin-top:.6rem;padding-top:.5rem;border-top:1px solid #e2e8f0;font-size:.68rem;color:#2563eb;font-weight:600;margin-bottom:.3rem">诊断产出物</div>
+    <div style="font-size:.68rem;color:#475569;line-height:1.8">
+      <a href="blocker1.html" style="color:#d97706;font-weight:700;text-decoration:none">#1</a> Network Performance Baseline Report<br>
+      <a href="blocker2.html" style="color:#be185d;font-weight:700;text-decoration:none">#2</a> Security Controls Audit Report<br>
+      <a href="blocker5.html" style="color:#2563eb;font-weight:700;text-decoration:none">#5</a> Pipeline Performance Diagnostic Report<br>
+      <a href="blocker6.html" style="color:#0891b2;font-weight:700;text-decoration:none">#6</a> Region &amp; Capacity Assessment Report<br>
+      <a href="blocker7.html" style="color:#059669;font-weight:700;text-decoration:none">#7</a> BigQuery Cost Optimization Assessment
+    </div>
+  </div>
+
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #d97706">
+    <div style="font-size:.7rem;font-weight:700;color:#d97706;letter-spacing:.06em;margin-bottom:.4rem">流程诊断 — 找到人和流程的卡点</div>
+    <ul style="font-size:.72rem;color:#475569;line-height:1.7;padding-left:1rem;margin:0">
+      <li><b>审批流程</b> — 安全审批标准是否清晰？Reviewer 是否到位？团队是否具备 GCP 审计能力？</li>
+      <li><b>人员调配</b> — DBA 团队汇报线确认、当前负载评估、VP 级跨部门协调路径</li>
+      <li><b>供应商协同</b> — 运营商合同条款确认、带宽升级变更审批周期、Google TAM 容量预留</li>
+      <li><b>变更管理</b> — 有无正式 Cutover Plan？旧系统关闭时间表？管理层切换指令？</li>
+      <li><b>用户就绪</b> — 培训完成率、用户访谈（活跃 vs 非活跃）、业务流程新旧映射、Change Champion 识别</li>
+      <li><b>代码治理</b> — Pipeline 代码维护责任人、Code Review 机制、团队 Dataflow 经验评估</li>
+    </ul>
+    <div style="margin-top:.6rem;padding-top:.5rem;border-top:1px solid #e2e8f0;font-size:.68rem;color:#d97706;font-weight:600;margin-bottom:.3rem">诊断产出物</div>
+    <div style="font-size:.68rem;color:#475569;line-height:1.8">
+      <a href="blocker3.html" style="color:#dc2626;font-weight:700;text-decoration:none">#3</a> Security Review Readiness Assessment<br>
+      <a href="blocker4.html" style="color:#7c3aed;font-weight:700;text-decoration:none">#4</a> DBA Engagement &amp; Data Validation Plan<br>
+      <a href="blocker8.html" style="color:#64748b;font-weight:700;text-decoration:none">#8</a> Adoption Gap Report &amp; User Readiness Score
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ===== Blocker Cards ===== -->
+<h2 id="sec-list">8. 严重等级 — 按紧急程度、推进难度、时间跨度、依赖强度进行评估</h2>
+<div style="background:#f8fafc;border-radius:12px;padding:1.5rem 2rem;box-shadow:0 2px 12px rgba(0,0,0,.06);margin:1.5rem 0">
+<p style="font-size:.78rem;color:#64748b;margin:0 0 1rem">从紧急程度、推进难度、时间跨度、依赖强度等关键维度评估优先级 — 确保最紧急的先动、最难的早投资源、最长的不被低估、牵连最广的先突破。</p>
+<div class="blocker-grid">
+
+  <a href="blocker3.html" class="blocker-card p0">
+    <div class="card-title"><span class="badge badge-p0">P0-长线</span> #3 Security Review</div>
+    <div class="card-desc">日历时间最长的单一瓶颈 — 审批不过 = 全白做<br><b>原则：</b>Day 1 提交，每次修复后增量补充</div>
+  </a>
+
+  <a href="blocker1.html" class="blocker-card p0">
+    <div class="card-title"><span class="badge badge-p0">P0-长线</span> #1 Interconnect</div>
+    <div class="card-desc">2PB 物理传输 ~4 周不可压缩 — #4/#5/#6/#7 全量验证全部依赖此链<br><b>原则：</b>Day 1 网络诊断 + 当天联系运营商；与 #3 构成 Go-Live 双重硬约束</div>
+  </a>
+
+  <a href="blocker6.html" class="blocker-card p0">
+    <div class="card-title"><span class="badge badge-p0">P0-触发</span> #6 Region Resources</div>
+    <div class="card-desc">诊断当天完成，但 quota 审批 2-4 周不可压缩<br><b>原则：</b>Day 1 诊断 + 当天提交 quota request（不可压缩等待，越早越好）</div>
+  </a>
+
+  <a href="blocker5.html" class="blocker-card p0">
+    <div class="card-title"><span class="badge badge-p0">P0-短线</span> #5 Pipeline Latency</div>
+    <div class="card-desc">技术不确定性最高，诊断驱动后续所有决策<br><b>原则：</b>子集数据 Day 1 profiling，不等带宽修复</div>
+  </a>
+
+  <a href="blocker7.html" class="blocker-card p1">
+    <div class="card-title"><span class="badge badge-p1">P1-快赢</span> #7 BigQuery Cost</div>
+    <div class="card-desc">不阻断 Go-Live 但成本改善立竿见影<br><b>原则：</b>子集 SQL + INFORMATION_SCHEMA 诊断优化 → Quick Win 提振信心</div>
+  </a>
+
+  <a href="blocker8.html" class="blocker-card p1">
+    <div class="card-title"><span class="badge badge-p1">P1-后台</span> #8 User Adoption</div>
+    <div class="card-desc">Day 1 部署 usage analytics 后台收集，Week 4+ 启动主动验证<br><b>原则：</b>先零成本后台采集数据；技术修复见效后再投入人力做访谈和培训</div>
+  </a>
+
+  <a href="blocker4.html" class="blocker-card p1">
+    <div class="card-title"><span class="badge badge-p1">P1-协调</span> #4 DBA Engagement</div>
+    <div class="card-desc">技术准备 Day 1 启动，人员协调需 VP 介入<br><b>原则：</b>CE+Partner 先做技术校验；同步触发 VP 协调 DBA 到位</div>
+  </a>
+
+  <a href="blocker2.html" class="blocker-card p1">
+    <div class="card-title"><span class="badge badge-p1">P1-短线</span> #2 Security Controls</div>
+    <div class="card-desc">Day 1 扫描完成，结果直接喂给 #3 Security Review<br><b>原则：</b>当天产出 gap 清单 → IAM/Firewall 快速修复 → Org Policy exemption 申请</div>
+  </a>
+
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem .8rem;margin-top:1rem;padding-top:.8rem;border-top:1px solid #e2e8f0;font-size:.7rem;color:#475569;line-height:1.5">
+  <div><span class="badge badge-p0" style="font-size:.6rem;padding:1px 5px">P0-长线</span> 不可压缩的硬约束，Go-Live 双重瓶颈</div>
+  <div><span class="badge badge-p0" style="font-size:.6rem;padding:1px 5px">P0-触发</span> Day 1 提交申请，外部审批不可压缩</div>
+  <div><span class="badge badge-p0" style="font-size:.6rem;padding:1px 5px">P0-短线</span> 技术不确定性高，需立即诊断</div>
+  <div><span class="badge badge-p1" style="font-size:.6rem;padding:1px 5px">P1-快赢</span> 低成本快速见效，提振信心</div>
+  <div><span class="badge badge-p1" style="font-size:.6rem;padding:1px 5px">P1-后台</span> 后台采集数据，后期主动推进</div>
+  <div><span class="badge badge-p1" style="font-size:.6rem;padding:1px 5px">P1-协调</span> 需跨团队拉齐人员和资源</div>
+  <div><span class="badge badge-p1" style="font-size:.6rem;padding:1px 5px">P1-短线</span> 产出直接喂给 P0 上游</div>
+</div>
+</div>
+
+<!-- ===== Priority Reassessment Entry ===== -->
+<div style="text-align:center;margin:1.5rem 0 .5rem">
+  <a href="priority.html" style="display:inline-block;background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;padding:.7rem 2rem;border-radius:8px;text-decoration:none;font-weight:700;font-size:.95rem;box-shadow:0 2px 12px rgba(37,99,235,.3);transition:transform .12s,box-shadow .12s">
+    📊 查看完整严重等级评估过程 →
+  </a>
+</div>
+
+<!-- ===== Gantt Timeline ===== -->
+<h2 id="sec-gantt">9. 并行链路 — 同步推进，阶段性依赖，割接前全线收敛</h2>
+<div class="gt" id="gantt3">
+<!-- 动态渲染：由 gantt-renderer.js 从 gantt-data.js 的 GANTT_10G_MD 生成 -->
+</div>
+
+<p style="font-size:.68rem;color:#94a3b8;margin:.6rem 0 .2rem;font-style:italic">排序：与严重等级一致（#3→#1→#6→#5→#7→#8→#4→#2）— 最紧急的在最上方，便于识别整体压缩空间和资源投入优先级。</p>
+<p style="font-size:.68rem;color:#94a3b8;margin:.2rem 0;font-style:italic">更新：本图随项目进展动态更新，每周对照实际进度与基线计划，识别偏差并调整后续节奏。</p>
+
+<ul class="gt-notes">
+  <li><em>带宽瓶颈</em> <b>2PB ÷ (10Gbps ÷ 8) ≈ 19 天（线速理论值）；有效利用率 70% 则 ≈ 26 天（~4 周）</b>— 不可压缩的物理瓶颈，压缩 #1 前半段（运营商响应+扩容）可让传输更早启动，是释放整体时间线的关键杠杆</li>
+  <li><em>阶段依赖</em> <b>#4/#5/#6/#7 全量验证必须等 #1 2PB 迁移完成（W10+）</b>— 子集数据可先行修复调优和验证，但最终性能基线、成本基线和数据一致性需要全量数据</li>
+  <li><em>审批链依赖</em> <b>#2 配置修复完成后材料移交 #3</b>— #2 是审批链的前置输入，#2 越早完成，#3 审批材料越完整</li>
+  <li><em>关键洞察</em> <b>任何单链完成 ≠ 可上线</b> — Go-Live = 所有链中最后完成的那条；#1 数据到位、#5 性能达标、#3 Clearance 获得，三者缺一不可</li>
+  <li><em>双重约束</em> <b>#3 审批（日历不可压缩）+ #1 传输（物理不可压缩）是 Go-Live 的双重硬约束</b>— #3 Day 1 提交，后续增量补充；#1 压缩前半段，尽早打开传输窗口</li>
+</ul>
+
+<div class="gt-legend">
+  <span><i class="leg-ext"></i>外部等待</span>
+  <span><i class="leg-blk"></i>依赖等待</span>
+  <span><i class="leg-crit"></i>前置依赖</span>
+</div>
+
+<!-- ===== 40G Compression ===== -->
+<h2 id="sec-compress">10. 链路压缩 — 40G 带宽下数据传输缩短 3 周，割接提前至 W9</h2>
+<div class="gt" id="gantt4">
+<!-- 动态渲染：由 gantt-renderer.js 从 gantt-data.js 的 GANTT_40G_MD 生成 -->
+</div>
+
+<p style="font-size:.68rem;color:#94a3b8;margin:.6rem 0 .2rem;font-style:italic">对比：同一项目仅改变带宽假设（10G → 40G），其余资源和工作项完全不变。拖拽验证约束传播后的压缩效果。</p>
+
+<ul class="gt-notes">
+  <li><em>带宽提升</em> <b>2PB ÷ (40Gbps ÷ 8 × 0.7) ≈ 6.6 天（~1 周）</b>vs 10G 的 ~4 周，物理传输窗口缩短 3 周</li>
+  <li><em>等待消除</em> <b>#4 DBA 等待完全消除</b>— 子集验证（4 周）自然覆盖传输窗口，无需额外等待</li>
+  <li><em>等待压缩</em> <b>#5/#7/#6 等待窗口从 3-5 周缩短至 1-2 周</b>— 下游团队空转时间大幅减少</li>
+  <li><em>关键差异</em> <b>割接 W12 → W9，节省 3 周</b>— 带宽是唯一变量，其余工作项时长不变；成本增量需与 3 周加速价值对比</li>
+</ul>
+
+<div class="gt-legend">
+  <span><i class="leg-ext"></i>外部等待</span>
+  <span><i class="leg-blk"></i>依赖等待</span>
+  <span><i class="leg-crit"></i>前置依赖</span>
+</div>
+
+<!-- ===== Phased Delivery ===== -->
+<h2 id="sec-phase">11. 持续交付 — 四个阶段，逐步收敛</h2>
+<div style="background:#f8fafc;border-radius:12px;padding:1.5rem 2rem;box-shadow:0 2px 12px rgba(0,0,0,.06);margin:1.5rem 0">
+<p style="font-size:.78rem;color:#64748b;margin:0 0 1rem">每个阶段有明确的交付物和退出标准 — 前一阶段产出是后一阶段的输入，不跳阶段、不留尾巴。</p>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem">
+
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #2563eb">
+    <div style="font-size:.65rem;font-weight:700;color:#2563eb;letter-spacing:.08em;margin-bottom:.4rem">阶段一 · W1-2</div>
+    <b style="font-size:.88rem;color:#1e293b;display:block;margin-bottom:.5rem">启动诊断</b>
+    <ul style="font-size:.72rem;color:#475569;line-height:1.6;padding-left:1rem;margin:0">
+      <li>#2 Gap 扫描完成，安全配置修复启动</li>
+      <li>#3 安全审批材料首版提交</li>
+      <li>#1 网络诊断报告产出，运营商工单提交</li>
+      <li>#6 Quota 诊断完成，扩容申请提交</li>
+      <li>#5 子集数据 profiling 报告产出</li>
+      <li>#7 子集 SQL 诊断报告 + INFORMATION_SCHEMA 分析</li>
+      <li>#4 Schema 审查完成，VP 协调启动</li>
+      <li>#8 Usage analytics 埋点部署，Baseline 数据开始采集</li>
+    </ul>
+    <div style="margin-top:.5rem;padding-top:.4rem;border-top:1px solid #e2e8f0;font-size:.68rem;color:#2563eb;font-weight:600">退出标准：所有链 Day 1 动作完成，外部申请全部提交</div>
+  </div>
+
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #d97706">
+    <div style="font-size:.65rem;font-weight:700;color:#d97706;letter-spacing:.08em;margin-bottom:.4rem">阶段二 · W3-5</div>
+    <b style="font-size:.88rem;color:#1e293b;display:block;margin-bottom:.5rem">子集攻坚</b>
+    <ul style="font-size:.72rem;color:#475569;line-height:1.6;padding-left:1rem;margin:0">
+      <li>#2 安全配置修复完成 → 全部材料移交 #3</li>
+      <li>#5 子集 Pipeline 修复调优完成，性能基线建立</li>
+      <li>#7 子集 SQL 优化方案落地，成本改善量化</li>
+      <li>#4 DBA 到位（VP 协调完成），数据验证框架就绪</li>
+      <li>#1 运营商响应 + 带宽扩容完成，2PB 传输启动</li>
+      <li>#6 Quota 审批进行中</li>
+      <li>#8 Baseline 数据积累，用户访谈方案设计</li>
+    </ul>
+    <div style="margin-top:.5rem;padding-top:.4rem;border-top:1px solid #e2e8f0;font-size:.68rem;color:#d97706;font-weight:600">退出标准：#2 修复完成移交 #3；#5 子集性能基线建立；#4 DBA 到位；2PB 传输已启动</div>
+  </div>
+
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #059669">
+    <div style="font-size:.65rem;font-weight:700;color:#059669;letter-spacing:.08em;margin-bottom:.4rem">阶段三 · W5-9</div>
+    <b style="font-size:.88rem;color:#1e293b;display:block;margin-bottom:.5rem">数据迁移</b>
+    <ul style="font-size:.72rem;color:#475569;line-height:1.6;padding-left:1rem;margin:0">
+      <li>#1 2PB 数据传输持续推进（10G ≈ 4 周不可压缩）</li>
+      <li>#4 数据验证执行，Schema 校验 + 一致性比对完成</li>
+      <li>#6 Quota 审批通过，资源扩容实施完成</li>
+      <li>#8 用户访谈 + Gap 分析完成，采用加速方案制定</li>
+      <li>#3 安全审批持续等待中（日历不可压缩）</li>
+      <li>#5 等待全量数据到位，持续优化子集调优成果</li>
+      <li>#7 等待全量数据到位，优化规则固化为自动化脚本</li>
+    </ul>
+    <div style="margin-top:.5rem;padding-top:.4rem;border-top:1px solid #e2e8f0;font-size:.68rem;color:#059669;font-weight:600">退出标准：#1 2PB 传输完成；#4 数据验证完成；#6 扩容实施完成；#8 采用加速方案就绪</div>
+  </div>
+
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #dc2626">
+    <div style="font-size:.65rem;font-weight:700;color:#dc2626;letter-spacing:.08em;margin-bottom:.4rem">阶段四 · W10-12</div>
+    <b style="font-size:.88rem;color:#1e293b;display:block;margin-bottom:.5rem">全量收敛</b>
+    <ul style="font-size:.72rem;color:#475569;line-height:1.6;padding-left:1rem;margin:0">
+      <li>#5 全量 Pipeline 性能验证通过，达到 SLA 目标</li>
+      <li>#7 全量 BigQuery 成本验证通过，运行成本达标</li>
+      <li>#3 安全审批 Clearance 获得</li>
+      <li>#4 全量数据一致性最终确认</li>
+      <li>#8 采用加速执行，用户切换方案落地</li>
+      <li>全链路端到端冒烟测试通过</li>
+      <li>割接方案评审 + 回滚预案确认</li>
+      <li>完成割接上线</li>
+    </ul>
+    <div style="margin-top:.5rem;padding-top:.4rem;border-top:1px solid #e2e8f0;font-size:.68rem;color:#dc2626;font-weight:600">退出标准：#3 Clearance 获得；#5/#7 全量验证通过；全部 Blocker 关闭；割接完成，生产环境运行</div>
+  </div>
+
+</div>
+</div>
+
+<!-- ===== Usage Growth Comparison ===== -->
+<h2 id="sec-growth">12. 爬坡节奏 — 10G vs 40G 用量走势对比</h2>
+<div style="background:#f8fafc;border-radius:12px;padding:1.5rem 2rem;box-shadow:0 2px 12px rgba(0,0,0,.06);margin:1.5rem 0">
+<p style="font-size:.78rem;color:#64748b;margin:0 0 .5rem">数据域逐批迁移 + 逐批规模化测试 — 不等全部传输完成就启动验证，每完成一个数据域即可并行测试。带宽差异决定了数据到位节奏，进而决定用量爬坡速度。</p>
+
+<div style="position:relative;background:#fff;border-radius:10px;padding:1.5rem 1.5rem 1rem;overflow:hidden;border:1px solid #e2e8f0">
+
+<canvas id="growthCanvas" width="900" height="520" style="width:100%;height:auto;position:relative;z-index:1"></canvas>
+
+<div style="display:flex;gap:2rem;justify-content:center;margin-top:.8rem;position:relative;z-index:1">
+  <span style="font-size:.68rem;color:#b45309;display:flex;align-items:center;gap:.4rem"><span style="display:inline-block;width:28px;height:3px;background:linear-gradient(90deg,#d97706,#f59e0b);border-radius:2px"></span>10G 带宽 — W4 起传输，2PB ≈ 4 周</span>
+  <span style="font-size:.68rem;color:#0e7490;display:flex;align-items:center;gap:.4rem"><span style="display:inline-block;width:28px;height:3px;background:linear-gradient(90deg,#0891b2,#06b6d4);border-radius:2px"></span>40G 带宽 — W4 起传输，2PB ≈ 1 周</span>
+  <span style="font-size:.68rem;color:#64748b;display:flex;align-items:center;gap:.4rem"><span style="display:inline-block;width:28px;height:1px;border-top:1.5px dashed #94a3b8"></span>目标产能 100%</span>
+</div>
+</div>
+
+<!-- Insight cards -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1rem">
+  <div style="background:#fff;border-radius:8px;padding:.8rem 1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-left:3px solid #f59e0b">
+    <div style="font-size:.62rem;font-weight:700;color:#f59e0b;letter-spacing:.06em;margin-bottom:.3rem">10G 场景</div>
+    <div style="font-size:.72rem;color:#475569;line-height:1.6">域间隔 <b>~5天</b>，D5 在 <b>W7.8</b> 到位，<b>W8.5</b> 才达 100% 全量负载。割接前仅 <b>≈ 3.5 周</b>全量运行窗口</div>
+  </div>
+  <div style="background:#fff;border-radius:8px;padding:.8rem 1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-left:3px solid #06b6d4">
+    <div style="font-size:.62rem;font-weight:700;color:#06b6d4;letter-spacing:.06em;margin-bottom:.3rem">40G 场景</div>
+    <div style="font-size:.72rem;color:#475569;line-height:1.6">域间隔 <b>~1.3天</b>，D5 在 <b>W5</b> 到位，<b>W5.5</b> 即达 100% 全量负载。割接可提前 <b>≈ 3 周</b></div>
+  </div>
+  <div style="background:#fff;border-radius:8px;padding:.8rem 1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-left:3px solid #dc2626">
+    <div style="font-size:.62rem;font-weight:700;color:#dc2626;letter-spacing:.06em;margin-bottom:.3rem">核心差异</div>
+    <div style="font-size:.72rem;color:#475569;line-height:1.6">40G 比 10G 提前 <b>≈ 3 周</b>达到 100% 全量负载。每个域到位即有团队并行测试，所有域全量测试 = 系统已跑满目标产能</div>
+  </div>
+</div>
+</div>
+
+<script>
+(function(){
+var c=document.getElementById('growthCanvas');
+if(!c)return;
+var ctx=c.getContext('2d');
+var W=c.width, H=c.height;
+var pad={t:30,r:100,b:120,l:60};
+var gw=W-pad.l-pad.r, gh=H-pad.t-pad.b;
+
+/* 12 weeks, 0-100% capacity */
+var weeks=12, maxCap=105;
+function x(w){return pad.l+w/weeks*gw}
+function y(v){return pad.t+(1-v/maxCap)*gh}
+
+/* ── 数据模型 v4 ──
+ * Gantt: W1 诊断, W2-W3 运营商协调, W4 起传输
+ * 2PB = 5 domains × ~400TB
+ * 10G: 7Gbps eff → domain ~5.3d (~0.76w) → D1@W4.8 … D5@W7.8 → 100%@W8.5
+ * 40G: 28Gbps eff → domain ~1.3d (~0.19w) → D1@W4.2 … D5@W5.0 → 100%@W5.5
+ * W0-W4 完全重合（传输前）
+ * 每域到位 → 立即并行全量测试 → 阶梯跳升
+ * 所有域全量测试 = 100% 用量（不等割接）
+ */
+
+/* ── 共同阶段：W0-W4 完全重合 ── */
+var shared=[
+  {w:0,  v:5},    /* 当前 baseline：目标的 ~5% */
+  {w:1,  v:5},    /* W1: 诊断中 */
+  {w:2,  v:7},    /* W2: 诊断完成，子集小修复 */
+  {w:3,  v:9},    /* W3: 子集测试 + 运营商协调中 */
+  {w:4,  v:12}    /* W4: 运营商完成，传输启动 */
+];
+
+/* ── 10G: 域间隔 ~0.76w，D1@W4.8→D5@W7.8，全量~W8.5 ── */
+var pts10=shared.concat([
+  /* D1 到位 → 团队A立即全量测该域 */
+  {w:4.8, v:12},   /* D1 刚到 */
+  {w:5.1, v:28},   /* D1 全量测试启动 */
+  /* D2 到位 → 团队B并行 */
+  {w:5.5, v:28},   /* D2 刚到 */
+  {w:5.8, v:43},   /* D1+D2 并行全量 */
+  /* D3 到位 */
+  {w:6.3, v:43},   /* D3 刚到 */
+  {w:6.6, v:58},   /* 3 域并行全量 */
+  /* D4 到位 */
+  {w:7.0, v:58},   /* D4 刚到 */
+  {w:7.3, v:76},   /* 4 域并行全量 */
+  /* D5 到位 → 全部数据就位 */
+  {w:7.8, v:76},   /* D5 刚到 */
+  {w:8.2, v:92},   /* 5 域全部并行全量测试 */
+  {w:8.5, v:100},  /* 全量负载 100% */
+  {w:8.8, v:97},   /* 发现全量级问题，小幅回落 */
+  {w:9.2, v:101},  /* 修复后恢复 */
+  {w:9.6, v:98},   /* 性能调优中微调 */
+  {w:10,  v:102},  /* 超额测试验证 */
+  {w:10.4,v:99},   /* 回收多余资源 */
+  {w:10.8,v:101},
+  {w:11.2,v:98},   /* 割接演练期间短暂降低 */
+  {w:11.6,v:100},
+  {w:12,  v:100}   /* 稳定运行 */
+]);
+
+/* ── 40G: 域间隔 ~0.19w，D1@W4.2→D5@W5.0，全量~W5.5 ── */
+var pts40=shared.concat([
+  /* D1 到位 */
+  {w:4.2, v:12},   /* D1 刚到 */
+  {w:4.4, v:28},   /* D1 全量测试启动；D2 到位 */
+  /* D2+D3 快速到位 */
+  {w:4.6, v:43},   /* D2 全量中，D3 到位 */
+  {w:4.8, v:58},   /* D3 全量中，D4 到位 */
+  /* D4+D5 */
+  {w:5.0, v:76},   /* D4 全量中，D5 到位 */
+  {w:5.3, v:92},   /* 5 域全部并行全量测试 */
+  {w:5.5, v:100},  /* 全量负载 100% */
+  {w:5.9, v:96},   /* 发现问题，排查修复 */
+  {w:6.3, v:101},  /* 修复上线 */
+  {w:6.8, v:98},   /* 调优期波动 */
+  {w:7.2, v:102},  /* 压测超额 */
+  {w:7.6, v:99},
+  {w:8.0, v:101},
+  {w:8.4, v:97},   /* 安全扫描期间限流 */
+  {w:8.8, v:100},
+  {w:9.2, v:102},  /* 峰值验证 */
+  {w:9.6, v:99},
+  {w:10,  v:101},
+  {w:10.4,v:98},
+  {w:10.8,v:100},
+  {w:11.2,v:101},  /* 割接演练 */
+  {w:11.6,v:99},
+  {w:12,  v:100}   /* 稳定运行 */
+]);
+
+/* Smooth curve through points using cardinal spline */
+function cardinalSpline(pts,tension){
+  if(pts.length<2)return[];
+  tension=tension||0.4;
+  var res=[];
+  for(var i=0;i<pts.length-1;i++){
+    var p0=pts[Math.max(0,i-1)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(pts.length-1,i+2)];
+    var nSeg=20;
+    for(var s=0;s<nSeg;s++){
+      var t=s/nSeg;
+      var t2=t*t,t3=t2*t;
+      var c0=-tension*t3+2*tension*t2-tension*t;
+      var c1=(2-tension)*t3+(tension-3)*t2+1;
+      var c2=(tension-2)*t3+(3-2*tension)*t2+tension*t;
+      var c3=tension*t3-tension*t2;
+      res.push({w:c0*p0.w+c1*p1.w+c2*p2.w+c3*p3.w, v:c0*p0.v+c1*p1.v+c2*p2.v+c3*p3.v});
+    }
+  }
+  res.push(pts[pts.length-1]);
+  return res;
+}
+
+function drawGrid(){
+  ctx.strokeStyle='rgba(148,163,184,.25)';
+  ctx.lineWidth=1;
+  /* Vertical: week lines */
+  for(var i=0;i<=weeks;i++){
+    var xp=x(i);
+    ctx.beginPath();ctx.moveTo(xp,pad.t);ctx.lineTo(xp,H-pad.b);ctx.stroke();
+  }
+  /* Horizontal: capacity lines */
+  for(var v=0;v<=100;v+=20){
+    var yp=y(v);
+    ctx.beginPath();ctx.moveTo(pad.l,yp);ctx.lineTo(W-pad.r,yp);ctx.stroke();
+  }
+  /* Axis labels */
+  ctx.fillStyle='#64748b';ctx.font='13px "Cascadia Code","Fira Code",monospace';ctx.textAlign='center';
+  for(var i=0;i<=weeks;i++){
+    ctx.fillText('W'+(i||'0'),x(i),H-pad.b+20);
+  }
+  ctx.textAlign='right';
+  for(var v=0;v<=100;v+=20){
+    ctx.fillText(v+'%',pad.l-8,y(v)+5);
+  }
+  /* Axis titles */
+  ctx.fillStyle='#475569';ctx.font='bold 13px sans-serif';ctx.textAlign='center';
+  ctx.fillText('Week',W/2,H-pad.b+30+30+8+14);
+  ctx.save();ctx.translate(14,pad.t+gh/2);ctx.rotate(-Math.PI/2);ctx.fillText('生产用量',0,0);ctx.restore();
+}
+
+function drawTarget(){
+  /* 100% 目标线 */
+  ctx.setLineDash([6,4]);
+  ctx.strokeStyle='rgba(100,116,139,.4)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(pad.l,y(100));ctx.lineTo(W-pad.r,y(100));ctx.stroke();
+  /* 5% 当前线 */
+  ctx.strokeStyle='rgba(220,38,38,.35)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(pad.l,y(5));ctx.lineTo(W-pad.r,y(5));ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+/* Draw domain arrival markers — vertical tick marks on the x-axis area */
+function drawDomainMarkers(pts,color,label,yOff){
+  var domains10=[4.8,5.5,6.3,7.0,7.8];
+  var domains40=[4.2,4.4,4.6,4.8,5.0];
+  var doms=label.indexOf('10G')===0?domains10:domains40;
+  var yBase=H-pad.b+30+yOff;  /* below W0-W12 labels */
+  var yTick=yBase;
+  var yDot=yTick+8;
+  var yLabel=yDot+14;
+  ctx.fillStyle=color;ctx.strokeStyle=color;
+  /* dashed guide lines from curve data points down to marker row */
+  ctx.save();
+  ctx.setLineDash([2,3]);ctx.strokeStyle=color;ctx.globalAlpha=0.25;ctx.lineWidth=1;
+  doms.forEach(function(dw,i){
+    /* find the y-value on the curve at this week */
+    var cv=0;
+    pts.forEach(function(p,j){
+      if(j<pts.length-1&&pts[j].w<=dw&&pts[j+1].w>=dw){
+        var t=(dw-p.w)/(pts[j+1].w-p.w);cv=p.v+t*(pts[j+1].v-p.v);
+      }
+    });
+    ctx.beginPath();ctx.moveTo(x(dw),y(cv));ctx.lineTo(x(dw),yTick);ctx.stroke();
+  });
+  ctx.restore();
+  /* connecting line between D1-D5 */
+  ctx.strokeStyle=color;ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(x(doms[0]),yDot);ctx.lineTo(x(doms[4]),yDot);ctx.stroke();
+  /* dot + tick for each domain */
+  doms.forEach(function(dw){
+    ctx.fillRect(x(dw)-0.5,yTick-2,1,6);
+    ctx.beginPath();ctx.arc(x(dw),yDot,3,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();ctx.strokeStyle=color;ctx.lineWidth=1.5;
+  });
+  /* prefix label left of D1 */
+  ctx.fillStyle=color;
+  ctx.font='bold 9px "Cascadia Code",monospace';ctx.textAlign='right';
+  ctx.fillText(label,x(doms[0])-6,yLabel);
+  /* D1-D5 labels centered on each dot */
+  ctx.textAlign='center';
+  doms.forEach(function(dw,i){
+    ctx.fillText('D'+(i+1),x(dw),yLabel);
+  });
+}
+
+function drawLine(pts,color1,color2,shadow){
+  var smooth=cardinalSpline(pts,0.3);
+  /* Glow */
+  ctx.save();
+  ctx.shadowColor=shadow;ctx.shadowBlur=12;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
+  ctx.strokeStyle=color1;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.beginPath();
+  smooth.forEach(function(p,i){
+    var px=x(p.w),py=y(Math.max(0,Math.min(105,p.v)));
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+  });
+  ctx.stroke();
+  ctx.restore();
+
+  /* Gradient fill under curve */
+  var grad=ctx.createLinearGradient(0,pad.t,0,H-pad.b);
+  grad.addColorStop(0,color1.replace(')',',0.25)').replace('rgb','rgba'));
+  grad.addColorStop(1,color1.replace(')',',0.02)').replace('rgb','rgba'));
+  ctx.fillStyle=grad;
+  ctx.beginPath();
+  smooth.forEach(function(p,i){
+    var px=x(p.w),py=y(Math.max(0,Math.min(105,p.v)));
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+  });
+  ctx.lineTo(x(smooth[smooth.length-1].w),y(0));
+  ctx.lineTo(x(smooth[0].w),y(0));
+  ctx.closePath();
+  ctx.fill();
+
+  /* Main line */
+  ctx.strokeStyle=color1;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.lineCap='round';
+  var lineGrad=ctx.createLinearGradient(pad.l,0,W-pad.r,0);
+  lineGrad.addColorStop(0,color1);lineGrad.addColorStop(1,color2);
+  ctx.strokeStyle=lineGrad;
+  ctx.beginPath();
+  smooth.forEach(function(p,i){
+    var px=x(p.w),py=y(Math.max(0,Math.min(105,p.v)));
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+  });
+  ctx.stroke();
+
+  /* Data points */
+  pts.forEach(function(p){
+    var px=x(p.w),py=y(p.v);
+    ctx.beginPath();ctx.arc(px,py,2.5,0,Math.PI*2);
+    ctx.fillStyle=color1;ctx.fill();
+    ctx.strokeStyle='#0f172a';ctx.lineWidth=1;ctx.stroke();
+  });
+
+  /* End label */
+  var last=pts[pts.length-1];
+  ctx.fillStyle=color1;ctx.font='bold 11px sans-serif';ctx.textAlign='left';
+  ctx.fillText(Math.round(last.v)+'%',x(last.w)+6,y(last.v)+4);
+}
+
+/* Area fill helper using rgba */
+function hexToRgba(hex,a){
+  var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return 'rgba('+r+','+g+','+b+','+a+')';
+}
+
+function drawFillArea(pts,color,alpha){
+  var smooth=cardinalSpline(pts,0.3);
+  var grad=ctx.createLinearGradient(0,pad.t,0,H-pad.b);
+  grad.addColorStop(0,hexToRgba(color,alpha));
+  grad.addColorStop(1,hexToRgba(color,0.02));
+  ctx.fillStyle=grad;
+  ctx.beginPath();
+  smooth.forEach(function(p,i){
+    var px=x(p.w),py=y(Math.max(0,Math.min(105,p.v)));
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+  });
+  ctx.lineTo(x(smooth[smooth.length-1].w),y(0));
+  ctx.lineTo(x(smooth[0].w),y(0));
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawCurve(pts,color1,color2,glowColor){
+  var smooth=cardinalSpline(pts,0.3);
+  /* Glow */
+  ctx.save();
+  ctx.shadowColor=glowColor;ctx.shadowBlur=14;
+  var lineGrad=ctx.createLinearGradient(pad.l,0,W-pad.r,0);
+  lineGrad.addColorStop(0,color1);lineGrad.addColorStop(1,color2);
+  ctx.strokeStyle=lineGrad;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.beginPath();
+  smooth.forEach(function(p,i){
+    var px=x(p.w),py=y(Math.max(0,Math.min(105,p.v)));
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+  });
+  ctx.stroke();
+  ctx.restore();
+
+  /* Main line */
+  ctx.strokeStyle=lineGrad;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.beginPath();
+  smooth.forEach(function(p,i){
+    var px=x(p.w),py=y(Math.max(0,Math.min(105,p.v)));
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+  });
+  ctx.stroke();
+
+  /* Dots at key points */
+  pts.forEach(function(p){
+    var px=x(p.w),py=y(p.v);
+    ctx.beginPath();ctx.arc(px,py,2.5,0,Math.PI*2);
+    ctx.fillStyle=color1;ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+  });
+
+}
+
+/* Phase markers */
+function drawPhases(){
+  var phases=[
+    {start:0,end:2,label:'启动诊断',color:'rgba(37,99,235,.06)'},
+    {start:2,end:5,label:'子集攻坚',color:'rgba(217,119,6,.05)'},
+    {start:5,end:9,label:'数据迁移',color:'rgba(5,150,105,.05)'},
+    {start:9,end:12,label:'全量收敛',color:'rgba(220,38,38,.05)'}
+  ];
+  phases.forEach(function(p){
+    ctx.fillStyle=p.color;
+    ctx.fillRect(x(p.start),pad.t,x(p.end)-x(p.start),gh);
+    ctx.fillStyle='#2563eb';
+    ctx.font='bold 24px sans-serif';ctx.textAlign='center';
+    ctx.fillText(p.label,x((p.start+p.end)/2),pad.t+gh/2+8);
+  });
+}
+
+/* Render */
+drawPhases();
+drawGrid();
+drawTarget();
+/* 10G: amber */
+drawFillArea(pts10,'#d97706',0.12);
+drawCurve(pts10,'#d97706','#f59e0b','rgba(217,119,6,.3)');
+drawDomainMarkers(pts10,'#d97706','10G: ',0);
+/* 40G: teal */
+drawFillArea(pts40,'#0891b2',0.10);
+drawCurve(pts40,'#0891b2','#06b6d4','rgba(8,145,178,.3)');
+drawDomainMarkers(pts40,'#0891b2','40G: ',30);
+
+/* ── 起始 & 全量标注（右侧 margin 区域，不与图表重叠）── */
+var rx=W-pad.r+8;
+/* 全量目标 100% — 右侧对齐 100% 线 */
+ctx.fillStyle='#059669';ctx.font='bold 13px sans-serif';ctx.textAlign='left';
+ctx.fillText('全量目标',rx,y(100)-2);
+ctx.fillText('100%',rx,y(100)+12);
+/* 当前 ~5% — 右侧对齐 5% 位置 */
+ctx.fillStyle='#dc2626';ctx.font='bold 13px sans-serif';ctx.textAlign='left';
+ctx.fillText('当前 ~5%',rx,y(5)+5);
+
+/* 100% milestone: vertical markers on chart */
+var y100=y(100);
+/* 40G hits 100% at ~W5.5 — small triangle + label below axis */
+ctx.fillStyle='#0891b2';ctx.font='bold 11px "Cascadia Code",monospace';ctx.textAlign='center';
+ctx.beginPath();ctx.moveTo(x(5.5),y100-2);ctx.lineTo(x(5.5)-4,y100-9);ctx.lineTo(x(5.5)+4,y100-9);ctx.fill();
+ctx.fillText('40G 100%',x(5.5),y100-12);
+/* 10G hits 100% at ~W8.5 */
+ctx.fillStyle='#d97706';
+ctx.beginPath();ctx.moveTo(x(8.5),y100-2);ctx.lineTo(x(8.5)-4,y100-9);ctx.lineTo(x(8.5)+4,y100-9);ctx.fill();
+ctx.fillText('10G 100%',x(8.5),y100-12);
+
+/* "~3 Weeks" bracket between the two 100% arrival points */
+var bY=y100-32;
+ctx.strokeStyle='rgba(71,85,105,.4)';ctx.lineWidth=1;ctx.setLineDash([]);
+ctx.beginPath();ctx.moveTo(x(5.5),bY);ctx.lineTo(x(8.5),bY);ctx.stroke();
+ctx.beginPath();ctx.moveTo(x(5.5),bY+4);ctx.lineTo(x(5.5),bY-4);ctx.stroke();
+ctx.beginPath();ctx.moveTo(x(8.5),bY+4);ctx.lineTo(x(8.5),bY-4);ctx.stroke();
+ctx.fillStyle='#475569';ctx.font='bold 9px "Cascadia Code",monospace';ctx.textAlign='center';
+ctx.fillText('Δ ≈ 3 Weeks',x(7),bY-6);
+
+})();
+</script>
+
+<!-- ===== Governance & Risk ===== -->
+<h2 id="sec-gov">13. 风险管控 — 治理机制、报告节奏与首要风险</h2>
+<div style="background:#f8fafc;border-radius:12px;padding:1.5rem 2rem;box-shadow:0 2px 12px rgba(0,0,0,.06);margin:1.5rem 0">
+<p style="font-size:.78rem;color:#64748b;margin:0 0 1rem">确保加速计划不只是"写在纸上" — 通过治理结构、报告节奏和升级路径，让偏差在发生当周被发现、被决策、被纠正。</p>
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem">
+
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #2563eb">
+    <div style="font-size:.7rem;font-weight:700;color:#2563eb;letter-spacing:.06em;margin-bottom:.4rem">治理结构</div>
+    <ul style="font-size:.72rem;color:#475569;line-height:1.7;padding-left:1rem;margin:0">
+      <li><b>每日 War Room（按需）</b> — 仅多条链路同时停滞时启动，常态下不开，让团队聚焦执行</li>
+      <li><b>周度 Steering Meeting</b> — Outcome CE + Customer PM + 各链 Owner，30 min，每周一固定</li>
+      <li><b>双周 Executive Review</b> — VP of Operations + Head of Cloud Delivery + Outcome CE，15 min，聚焦 Red/Amber 项</li>
+      <li><b>即时升级</b> — 任何链出现 ≥1 周偏差立即触发 Escalation，不等周会</li>
+      <li><b>决策权限</b> — 技术决策由 Head of Cloud Delivery 拍板；资源/预算/人员调配由 VP of Operations 拍板</li>
+    </ul>
+  </div>
+
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #059669">
+    <div style="font-size:.7rem;font-weight:700;color:#059669;letter-spacing:.06em;margin-bottom:.4rem">报告节奏</div>
+    <ul style="font-size:.72rem;color:#475569;line-height:1.7;padding-left:1rem;margin:0">
+      <li><b>Weekly Status Report</b> — 8 条链 RAG 状态（Red/Amber/Green）+ 本周动作 + 下周计划</li>
+      <li><b>Gantt 基线对照</b> — 每周更新实际进度 vs 基线计划，识别偏差天数</li>
+      <li><b>Blocker Burndown</b> — 跟踪已关闭 / 进行中 / 未启动的 Blocker 数量趋势</li>
+      <li><b>Risk Register</b> — 每周更新风险清单，新增/升级/关闭记录存档</li>
+    </ul>
+  </div>
+
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #dc2626">
+    <div style="font-size:.7rem;font-weight:700;color:#dc2626;letter-spacing:.06em;margin-bottom:.4rem">升级路径</div>
+    <ul style="font-size:.72rem;color:#475569;line-height:1.7;padding-left:1rem;margin:0">
+      <li><b style="color:#16a34a">Green</b> — 按计划推进，周报记录即可</li>
+      <li><b style="color:#d97706">Amber</b> — 出现偏差但可自行纠正，周会重点讨论，Owner 承诺修正日期</li>
+      <li><b style="color:#dc2626">Red</b> — 偏差 ≥1 周或外部阻塞，立即升级至 Executive Review，48h 内产出决策</li>
+      <li><b style="color:#1a1a2e">Black</b> — Go-Live 时间线受威胁，触发 War Room 模式，每日站会直至恢复</li>
+    </ul>
+  </div>
+
+</div>
+
+<div style="font-size:.75rem;font-weight:700;color:#1e293b;margin-bottom:.6rem">⚠ 首要风险 — 经分析识别的三个最高风险卡点</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem">
+
+  <div style="background:#fef2f2;border-radius:8px;padding:.8rem 1rem;border-left:3px solid #dc2626">
+    <div style="font-size:.75rem;font-weight:700;color:#dc2626;margin-bottom:.3rem">#3 Security Review</div>
+    <div style="font-size:.7rem;color:#475569;line-height:1.6">
+      <b>风险等级：</b>高<br>
+      <b>原因：</b>客户内部安全团队审批，但标准可能不清晰、团队缺乏 GCP 审计经验、甚至可能无人被指定为 Reviewer；审批日历不可压缩，且是 Go-Live 硬门槛，任何技术链完成都无法绕过此关<br>
+      <b>缓解：</b>Day 1 提交材料抢占排期；必要时运行 Security Workshop 帮安全团队建立 GCP 审批能力；#2 修复完成后立即补充材料，减少补充轮次
+    </div>
+  </div>
+
+  <div style="background:#fef2f2;border-radius:8px;padding:.8rem 1rem;border-left:3px solid #d97706">
+    <div style="font-size:.75rem;font-weight:700;color:#d97706;margin-bottom:.3rem">#1 Interconnect</div>
+    <div style="font-size:.7rem;color:#475569;line-height:1.6">
+      <b>风险等级：</b>高<br>
+      <b>原因：</b>2PB 物理传输 ≈ 4 周不可压缩；运营商响应和扩容时间不可控；传输完成时间直接决定 #5/#7 全量验证的启动时间<br>
+      <b>缓解：</b>压缩前半段（Day 1 诊断 + 尽早提交运营商工单），让传输窗口尽早打开
+    </div>
+  </div>
+
+  <div style="background:#fef2f2;border-radius:8px;padding:.8rem 1rem;border-left:3px solid #2563eb">
+    <div style="font-size:.75rem;font-weight:700;color:#2563eb;margin-bottom:.3rem">#5 Pipeline Latency</div>
+    <div style="font-size:.7rem;color:#475569;line-height:1.6">
+      <b>风险等级：</b>高<br>
+      <b>原因：</b>子集可先行修复，但全量验证必须等 #1 2PB 数据到位；链路跨度 12 周且尾部无缓冲；性能问题根因可能在全量数据下才暴露<br>
+      <b>缓解：</b>子集阶段尽早建立性能基线和自动化回归测试，全量数据到位后快速切入验证
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ===== Kickoff ===== -->
+<h2 id="sec-kickoff">14. 启动大会 — 各方角色与协同机制</h2>
+<div style="background:#f8fafc;border-radius:12px;padding:1.5rem 2rem;box-shadow:0 2px 12px rgba(0,0,0,.06);margin:1.5rem 0">
+<p style="font-size:.78rem;color:#64748b;margin:0 0 1.2rem">启动大会的核心目标：让每个人看到全局、找到自己的位置、理解第一周要做什么。</p>
+
+<!-- Hub-and-Spoke Org Chart -->
+<div style="display:flex;gap:1.5rem;align-items:center;margin-bottom:1.5rem">
+
+  <!-- Customer Side — 执行层 -->
+  <div style="flex:1;background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #059669">
+    <div style="font-size:.7rem;font-weight:700;color:#059669;letter-spacing:.06em;margin-bottom:.8rem;text-align:center">客户团队</div>
+    <div style="display:flex;flex-direction:column;gap:.5rem">
+      <div style="background:#f0fdf4;border-radius:6px;padding:.5rem .7rem;font-size:.72rem;color:#166534">
+        <b>Operations / Infra</b><br><span style="font-size:.66rem;color:#4b5563">#1 网络 · #2 安全 · #6 资源</span>
+      </div>
+      <div style="background:#f0fdf4;border-radius:6px;padding:.5rem .7rem;font-size:.72rem;color:#166534">
+        <b>Data Team / DBA</b><br><span style="font-size:.66rem;color:#4b5563">#4 Schema · #7 BigQuery</span>
+      </div>
+      <div style="background:#f0fdf4;border-radius:6px;padding:.5rem .7rem;font-size:.72rem;color:#166534">
+        <b>R&D Team</b><br><span style="font-size:.66rem;color:#4b5563">#5 Pipeline 代码</span>
+      </div>
+      <div style="background:#f0fdf4;border-radius:6px;padding:.5rem .7rem;font-size:.72rem;color:#166534">
+        <b>Security / Compliance</b><br><span style="font-size:.66rem;color:#4b5563">#3 审批执行</span>
+      </div>
+      <div style="background:#f0fdf4;border-radius:6px;padding:.5rem .7rem;font-size:.72rem;color:#166534">
+        <b>Change Mgmt Lead</b><br><span style="font-size:.66rem;color:#4b5563">#8 用户采用</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Coordination Core -->
+  <div style="flex:1;background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #7c3aed">
+    <div style="font-size:.7rem;font-weight:700;color:#7c3aed;letter-spacing:.06em;margin-bottom:.8rem;text-align:center">协调核心</div>
+    <div style="display:flex;flex-direction:column;gap:.5rem">
+      <div style="background:#f5f3ff;border-radius:6px;padding:.5rem .7rem;font-size:.72rem;color:#5b21b6">
+        <b>VP of Operations</b><br><span style="font-size:.66rem;color:#6b7280">预算 · 安全终签 · Legacy 退役</span>
+      </div>
+      <div style="background:#f5f3ff;border-radius:6px;padding:.5rem .7rem;font-size:.72rem;color:#5b21b6">
+        <b>Head of Cloud Delivery</b><br><span style="font-size:.66rem;color:#6b7280">A × 6 · 技术决策权</span>
+      </div>
+      <div style="background:#f5f3ff;border-radius:6px;padding:.5rem .7rem;font-size:.72rem;color:#5b21b6">
+        <b>Project Manager</b><br><span style="font-size:.66rem;color:#6b7280">状态跟踪 · 会议协调</span>
+      </div>
+      <div style="background:#e8f0fe;border-radius:6px;padding:.5rem .7rem;font-size:.72rem;color:#1a73e8">
+        <b>Google Outcome CE</b><br><span style="font-size:.66rem;color:#5f6368">R × 8 链路 · 全线协同</span>
+        <div style="display:flex;gap:.25rem;flex-wrap:wrap;margin-top:.35rem">
+          <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#d97706">#1</span>
+          <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#be185d">#2</span>
+          <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#dc2626">#3</span>
+          <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#7c3aed">#4</span>
+          <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#2563eb">#5</span>
+          <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#0891b2">#6</span>
+          <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#059669">#7</span>
+          <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#64748b">#8</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Google Side -->
+  <div style="flex:1;background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #4285f4">
+    <div style="font-size:.7rem;font-weight:700;color:#4285f4;letter-spacing:.06em;margin-bottom:.8rem;text-align:center">谷歌团队</div>
+    <div style="display:flex;flex-direction:column;gap:.5rem">
+      <div style="background:#e8f0fe;border-radius:6px;padding:.5rem .7rem;font-size:.72rem;color:#1a73e8">
+        <b>Google TAM</b><br><span style="font-size:.66rem;color:#5f6368">账号管理 · 容量预留 · SLA</span>
+      </div>
+      <div style="background:#e8f0fe;border-radius:6px;padding:.5rem .7rem;font-size:.72rem;color:#1a73e8">
+        <b>Google Specialist CE — Security</b><br><span style="font-size:.66rem;color:#5f6368">安全 Workshop · 合规映射</span>
+      </div>
+      <div style="background:#e8f0fe;border-radius:6px;padding:.5rem .7rem;font-size:.72rem;color:#1a73e8">
+        <b>Google Specialist CE — Infra</b><br><span style="font-size:.66rem;color:#5f6368">Dataflow · GKE · BigQuery</span>
+      </div>
+      <div style="background:#e8f0fe;border-radius:6px;padding:.5rem .7rem;font-size:.72rem;color:#1a73e8">
+        <b>Google Pre-sales CE</b><br><span style="font-size:.66rem;color:#5f6368">原始架构设计上下文</span>
+      </div>
+      <div style="background:#e8f0fe;border-radius:6px;padding:.5rem .7rem;font-size:.72rem;color:#1a73e8">
+        <b>Google Support</b><br><span style="font-size:.66rem;color:#5f6368">产品级技术支持</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Partners -->
+<div style="background:#fff;border-radius:8px;padding:.8rem 1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #f59e0b;margin-bottom:1.5rem">
+  <div style="font-size:.7rem;font-weight:700;color:#b45309;letter-spacing:.06em;margin-bottom:.5rem;text-align:center">合作伙伴 — Outcome CE 紧密协作，全力保障</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;max-width:500px;margin:0 auto">
+    <div style="background:#fffbeb;border-radius:6px;padding:.5rem .7rem;font-size:.72rem;color:#92400e;text-align:center">
+      <b>SI / ISV</b><br><span style="font-size:.66rem;color:#78716c">#4 DBA 补位 · #5 Pipeline 代码</span>
+    </div>
+    <div style="background:#fffbeb;border-radius:6px;padding:.5rem .7rem;font-size:.72rem;color:#92400e;text-align:center">
+      <b>运营商</b><br><span style="font-size:.66rem;color:#78716c">#1 专线带宽交付</span>
+    </div>
+  </div>
+</div>
+
+<!-- Why Outcome CE is the hub -->
+<div style="background:#fff;border-radius:8px;padding:1rem 1.2rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-left:4px solid #7c3aed">
+  <div style="font-size:.75rem;font-weight:700;color:#7c3aed;margin-bottom:.5rem">Google Outcome CE 的核心职责</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem .8rem;font-size:.72rem;color:#475569;line-height:1.6">
+    <div><b>全线协同</b> — 唯一在全部 8 条链路中承担 R（Responsible）的角色，对每个 Blocker 提供诊断框架和执行指导</div>
+    <div><b>连接赋能</b> — 协同 Google 技术资源、SI/ISV 和运营商，共同支撑 Customer 执行团队和决策层</div>
+    <div><b>节奏驱动</b> — 组织周度 Steering Meeting + 双周 Executive Review，确保偏差在当周被发现和决策</div>
+    <div><b>辅助决策</b> — A（Accountable）在客户侧的 VP 和 Head of Cloud Delivery 手中；Outcome CE 提供全局视野和建议，不替客户做决定</div>
+  </div>
+</div>
+</div>
+
+<!-- ===== Day 1 Actions ===== -->
+<h2 id="sec-day1">15. 即刻行动 — 首日行动清单</h2>
+<div style="background:#f8fafc;border-radius:12px;padding:1.5rem 2rem;box-shadow:0 2px 12px rgba(0,0,0,.06);margin:1.5rem 0">
+<p style="font-size:.78rem;color:#64748b;margin:0 0 1rem">Day 1 = 发令枪。所有链路同时启动，每个角色有明确的首日交付物。不等、不拖、不商量优先级 — 全部并行。首日锚定基线，周度 Steering 持续校准交付节奏。</p>
+
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem">
+
+  <!-- VP of Operations -->
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #dc2626">
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+      <div style="font-size:.75rem;font-weight:700;color:#dc2626">VP of Operations</div>
+      <span style="font-size:.55rem;background:#dc2626;color:#fff;padding:1px 5px;border-radius:3px;font-weight:700">#3</span>
+      <span style="font-size:.55rem;background:#7c3aed;color:#fff;padding:1px 5px;border-radius:3px;font-weight:700">#4</span>
+      <span style="font-size:.55rem;background:#64748b;color:#fff;padding:1px 5px;border-radius:3px;font-weight:700">#8</span>
+    </div>
+    <ul style="font-size:.72rem;color:#475569;line-height:1.7;padding-left:1rem;margin:0">
+      <li>签署 DBA 跨部门协调授权，确保 #4 人员 48h 内到位</li>
+      <li>确认安全审批 Reviewer 指定，推动 #3 排期</li>
+      <li>发布迁移优先级指令，明确全量上线和 Legacy 退役目标</li>
+    </ul>
+  </div>
+
+  <!-- Head of Cloud Delivery -->
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #059669">
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+      <div style="font-size:.75rem;font-weight:700;color:#059669">Head of Cloud Delivery</div>
+      <span style="font-size:.55rem;background:#d97706;color:#fff;padding:1px 5px;border-radius:3px;font-weight:700">#1</span>
+      <span style="font-size:.55rem;background:#0891b2;color:#fff;padding:1px 5px;border-radius:3px;font-weight:700">#6</span>
+    </div>
+    <ul style="font-size:.72rem;color:#475569;line-height:1.7;padding-left:1rem;margin:0">
+      <li>确认 8 条链路 Owner 指定，每条链有且仅有一个负责人</li>
+      <li>审批 Interconnect 扩容方案（10G vs 40G 决策）</li>
+      <li>确认 Region 选择决策权限和备选方案</li>
+    </ul>
+  </div>
+
+  <!-- R&D Team -->
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #2563eb">
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+      <div style="font-size:.75rem;font-weight:700;color:#2563eb">R&D Team</div>
+      <span style="font-size:.55rem;background:#2563eb;color:#fff;padding:1px 5px;border-radius:3px;font-weight:700">#5</span>
+    </div>
+    <ul style="font-size:.72rem;color:#475569;line-height:1.7;padding-left:1rem;margin:0">
+      <li>Pipeline profiling — 抓取 Dataflow job metrics，识别 top 5 慢 stage</li>
+      <li>定位热点：serialization、shuffle、I/O wait、内存溢出</li>
+    </ul>
+  </div>
+
+  <!-- PM -->
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #94a3b8">
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+      <div style="font-size:.75rem;font-weight:700;color:#64748b">Project Manager</div>
+      <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#d97706">#1</span>
+      <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#be185d">#2</span>
+      <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#dc2626">#3</span>
+      <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#7c3aed">#4</span>
+      <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#2563eb">#5</span>
+      <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#0891b2">#6</span>
+      <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#059669">#7</span>
+      <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#64748b">#8</span>
+    </div>
+    <ul style="font-size:.72rem;color:#475569;line-height:1.7;padding-left:1rem;margin:0">
+      <li>建立 Blocker 跟踪看板（8 条链 × RAG 状态）</li>
+      <li>安排首次 Steering Meeting 日历（周一 30min 固定）</li>
+      <li>确认 Executive Review 双周节奏并发送日历邀请</li>
+    </ul>
+  </div>
+
+  <!-- Data Team / DBA -->
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #7c3aed">
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+      <div style="font-size:.75rem;font-weight:700;color:#7c3aed">Data Team / DBA</div>
+      <span style="font-size:.55rem;background:#7c3aed;color:#fff;padding:1px 5px;border-radius:3px;font-weight:700">#4</span>
+    </div>
+    <ul style="font-size:.72rem;color:#475569;line-height:1.7;padding-left:1rem;margin:0">
+      <li>完成 Schema 差异对照（Legacy → GCP 字段映射）</li>
+      <li>启动子集数据验证脚本（抽样比对 + 一致性校验）</li>
+    </ul>
+  </div>
+
+  <!-- Outcome CE -->
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #7c3aed">
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+      <div style="font-size:.75rem;font-weight:700;color:#7c3aed">Google Outcome CE</div>
+      <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#d97706">#1</span>
+      <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#be185d">#2</span>
+      <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#dc2626">#3</span>
+      <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#7c3aed">#4</span>
+      <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#2563eb">#5</span>
+      <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#0891b2">#6</span>
+      <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#059669">#7</span>
+      <span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:.55rem;font-weight:700;color:#fff;background:#64748b">#8</span>
+    </div>
+    <ul style="font-size:.72rem;color:#475569;line-height:1.7;padding-left:1rem;margin:0">
+      <li>启动全部 8 条链路诊断，确认每条链的 Day 1 Action Owner</li>
+      <li>组织首次 Steering Meeting（30 min），对齐目标和时间线</li>
+      <li>协调 Google 侧资源到位（TAM / Specialist CE / Support）</li>
+      <li>建立 Blocker 跟踪看板，定义 RAG 状态基线</li>
+    </ul>
+  </div>
+
+  <!-- Security Team -->
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #dc2626">
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+      <div style="font-size:.75rem;font-weight:700;color:#dc2626">Security / Compliance</div>
+      <span style="font-size:.55rem;background:#dc2626;color:#fff;padding:1px 5px;border-radius:3px;font-weight:700">#3</span>
+    </div>
+    <ul style="font-size:.72rem;color:#475569;line-height:1.7;padding-left:1rem;margin:0">
+      <li>明确审批标准：GCP workload 审批 checklist 是否存在？</li>
+      <li>确认所需证据清单：架构图 / 合规报告 / IAM / 加密 / 日志</li>
+      <li>确认 Reviewer 指定：谁负责审批？审批周期预期？</li>
+    </ul>
+  </div>
+
+  <!-- Google TAM -->
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #4285f4">
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+      <div style="font-size:.75rem;font-weight:700;color:#4285f4">Google TAM</div>
+      <span style="font-size:.55rem;background:#0891b2;color:#fff;padding:1px 5px;border-radius:3px;font-weight:700">#6</span>
+    </div>
+    <ul style="font-size:.72rem;color:#475569;line-height:1.7;padding-left:1rem;margin:0">
+      <li>提交 Quota 加急申请，走内部加速通道</li>
+      <li>确认容量预留（Capacity Reservation）可行性和前置时间</li>
+    </ul>
+  </div>
+
+  <!-- Operations / Infra -->
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #d97706">
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+      <div style="font-size:.75rem;font-weight:700;color:#d97706">Operations / Infra Team</div>
+      <span style="font-size:.55rem;background:#d97706;color:#fff;padding:1px 5px;border-radius:3px;font-weight:700">#1</span>
+      <span style="font-size:.55rem;background:#be185d;color:#fff;padding:1px 5px;border-radius:3px;font-weight:700">#2</span>
+      <span style="font-size:.55rem;background:#0891b2;color:#fff;padding:1px 5px;border-radius:3px;font-weight:700">#6</span>
+    </div>
+    <ul style="font-size:.72rem;color:#475569;line-height:1.7;padding-left:1rem;margin:0">
+      <li>运行 Interconnect 诊断（带宽测试 + 路由追踪 + 丢包率）</li>
+      <li>执行 Security Controls gap 扫描（Organization Policy + VPC + IAM）</li>
+      <li>提交 Quota increase 申请，记录当前 quota 使用率</li>
+    </ul>
+  </div>
+
+  <!-- SI Partner -->
+  <div style="background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);border-top:3px solid #64748b">
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+      <div style="font-size:.75rem;font-weight:700;color:#64748b">SI Partner</div>
+      <span style="font-size:.55rem;background:#7c3aed;color:#fff;padding:1px 5px;border-radius:3px;font-weight:700">#4</span>
+      <span style="font-size:.55rem;background:#2563eb;color:#fff;padding:1px 5px;border-radius:3px;font-weight:700">#5</span>
+    </div>
+    <ul style="font-size:.72rem;color:#475569;line-height:1.7;padding-left:1rem;margin:0">
+      <li>DBA 补位就绪确认 — 如客户 DBA 延迟到位，SI 立即顶上</li>
+      <li>Pipeline 代码熟悉度 check — 确认可独立修改 Dataflow job</li>
+    </ul>
+  </div>
+
+</div>
+</div>
+
+<div class="footer">Delivery Acceleration Plan — Blocker Analysis Dashboard</div>
+
+<script>
+(function(){
+  var btn=document.getElementById('snavBtn');
+  var panel=document.getElementById('snavPanel');
+  var bg=document.getElementById('snavBg');
+  var links=panel.querySelectorAll('a');
+  var sections=[];
+  links.forEach(function(a){var t=document.querySelector(a.getAttribute('href'));if(t)sections.push({el:t,link:a})});
+
+  function toggle(open){
+    var show=typeof open==='boolean'?open:!panel.classList.contains('open');
+    panel.classList.toggle('open',show);
+    bg.classList.toggle('open',show);
+    btn.classList.toggle('open',show);
+  }
+  btn.addEventListener('click',function(){toggle()});
+  bg.addEventListener('click',function(){toggle(false)});
+
+  // Click link → scroll + close
+  links.forEach(function(a){
+    a.addEventListener('click',function(e){
+      e.preventDefault();
+      var t=document.querySelector(this.getAttribute('href'));
+      if(t){window.scrollTo({top:t.getBoundingClientRect().top+window.scrollY-16,behavior:'smooth'})}
+      toggle(false);
+    });
+  });
+
+  // Scroll → highlight active section
+  function onScroll(){
+    var cur=null;
+    for(var i=sections.length-1;i>=0;i--){
+      if(sections[i].el.getBoundingClientRect().top<=80){cur=sections[i];break}
+    }
+    links.forEach(function(a){a.classList.remove('active')});
+    if(cur)cur.link.classList.add('active');
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});
+  onScroll();
+})();
+</script>
+<script src="gantt-data.js"></script>
+<script src="gantt-renderer.js"></script>
+<script src="gantt-version.js"></script>
+<script>
+/* Gantt 动态初始化 — 从 MD 配置生成 Gantt + 版本管理面板 */
+(function(){
+  /* 10G Gantt */
+  GanttRenderer.init(GANTT_10G_MD, 'gantt3');
+  GanttVersion.createPanel('gantt-10g', 'gantt3', GANTT_10G_MD);
+
+  /* 40G Gantt */
+  GanttRenderer.init(GANTT_40G_MD, 'gantt4');
+  GanttVersion.createPanel('gantt-40g', 'gantt4', GANTT_40G_MD);
+})();
+</script>
+</body>
+</html>

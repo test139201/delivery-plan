@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>#6 Target Region Resources — Blocker Detail</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.ref-col{width:90px;text-align:center;font-size:.75rem;color:#6b7280;font-family:"Cascadia Code","Fira Code",monospace;vertical-align:middle;letter-spacing:-.02em;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="nav"><a href="index.html">← 返回总览</a></div>
+
+<div class="page-header">
+  <h1>#6 Target Region Resources</h1>
+  <span class="badge badge-p0">P0-触发</span>
+  <span class="status status-active">Active</span>
+</div>
+<p class="subtitle">诊断当天完成，但 quota 审批 2-4 周 — Day 1 必须提交申请</p>
+
+<div class="card">
+<table>
+<tr class="section-header"><td colspan="3">基本信息</td></tr>
+<tr><th>架构图位置</th><td>GKE Compute Pool → Region: Target Data Center</td><td class="ref-col"></td></tr>
+<tr><th>架构图标注</th><td>⚠️ Resources Unavailable</td><td class="ref-col"></td></tr>
+<tr><th>上下游关系</th><td><b>上游:</b> Dataflow ETL Engine（处理后数据需要 GKE 承载计算）<br><b>下游:</b> BigQuery（计算结果写入）</td><td class="ref-col"></td></tr>
+<tr><th>Impact</th><td>无法 scale out，当前计算资源无法支撑生产负载</td><td class="ref-col"></td></tr>
+<tr><th>假设归属</th><td>H1: 技术与基建</td><td class="ref-col"></td></tr>
+<tr><th>怀疑方向</th><td>目标 region 的计算资源不足，可能是 quota 限制、机型无库存、或 autoscaling 配置有问题</td><td class="ref-col"></td></tr>
+
+<tr class="section-header hyp"><td colspan="3">Sub-Hypotheses</td></tr>
+
+<tr class="sub-hyp"><th>6a — Quota 不足</th><td>项目在目标 region 的 CPU/GPU quota 低于生产需求</td><td class="ref-col"></td></tr>
+<tr class="validate"><th>✅ Validate</th><td>Quota dashboard 显示已用 quota 接近或达到上限；部署新 node 时返回 quota exceeded 错误</td><td class="ref-col">→ A1,5<br>→ A7,9</td></tr>
+<tr class="invalidate"><th>❌ Invalidate</th><td>Quota 充足（已用 &lt;50% 上限），部署新 node 无 quota 报错 → 不是 quota 问题</td><td class="ref-col">→ A1,5<br>→ A7,9</td></tr>
+<tr class="fallback"><th>→ 若排除</th><td>检查 Sub-Hypothesis 6b</td><td class="ref-col"></td></tr>
+
+<tr class="sub-hyp"><th>6b — 机型无库存</th><td>目标 region 所需的机型（如 n2-standard-32）物理库存不足</td><td class="ref-col"></td></tr>
+<tr class="validate"><th>✅ Validate</th><td>部署请求返回 ZONE_RESOURCE_POOL_EXHAUSTED 错误；GCP Status Dashboard 显示该 region 容量受限</td><td class="ref-col">→ A2,5,6<br>→ A8,9</td></tr>
+<tr class="invalidate"><th>❌ Invalidate</th><td>目标机型在所有 zone 均可部署 → 不是库存问题</td><td class="ref-col">→ A2,5,6<br>→ A8,9</td></tr>
+<tr class="fallback"><th>→ 若排除</th><td>检查 Sub-Hypothesis 6c</td><td class="ref-col"></td></tr>
+
+<tr class="sub-hyp"><th>6c — Autoscaling 配置不当</th><td>资源实际可用，但 GKE autoscaler 配置了过低的 maxNodeCount 或错误的 scaling policy</td><td class="ref-col"></td></tr>
+<tr class="validate"><th>✅ Validate</th><td>Autoscaler 日志显示达到 maxNodeCount 上限拒绝扩容；或 scale-up 延迟过长（&gt;10min）</td><td class="ref-col">→ A3,4,5</td></tr>
+<tr class="invalidate"><th>❌ Invalidate</th><td>Autoscaler 配置合理、扩容正常触发 → 不是配置问题</td><td class="ref-col">→ A3,4,5</td></tr>
+<tr class="fallback"><th>→ 若排除</th><td>资源问题可能是复合因素（quota + 配置），需综合分析</td><td class="ref-col"></td></tr>
+
+<tr class="section-header disc"><td colspan="3">Discovery — Technical Actions</td></tr>
+<tr><th>Action 1</th><td>Quota Dashboard 检查 — <code>gcloud compute regions describe [REGION]</code> 查看各资源类型 quota 使用率</td><td class="ref-col">← 6a</td></tr>
+<tr><th>Action 2</th><td>机型可用性测试 — 在目标 region 每个 zone 尝试创建目标机型实例，记录哪些 zone 可用、哪些返回 EXHAUSTED</td><td class="ref-col">← 6b</td></tr>
+<tr><th>Action 3</th><td>GKE Autoscaler 审计 — 检查 cluster autoscaler 配置：minNodeCount, maxNodeCount, scaling policy；查看 autoscaler events 日志</td><td class="ref-col">← 6c</td></tr>
+<tr><th>Action 4</th><td>Node Pool 配置审查 — 检查当前 node pool 的机型选择、preemptible/spot 比例、multi-zone 配置</td><td class="ref-col">← 6c</td></tr>
+<tr><th>Action 5</th><td>容量需求测算 — 基于全量生产负载反推所需的计算资源量（vCPU/RAM/Disk），对比当前配置</td><td class="ref-col">← 6a,6b,6c</td></tr>
+<tr><th>Action 6</th><td>备选 Region 延迟测试 — 如果目标 region 确认容量不足，测试候选 region 到 on-prem 和终端用户的网络延迟</td><td class="ref-col">← 6b</td></tr>
+
+<tr class="section-header disc"><td colspan="3">Discovery — Process Actions</td></tr>
+<tr><th>Action 7</th><td>确认 Quota 申请流程和审批人 — Quota increase request 走什么渠道？审批周期多长？能否加急？</td><td class="ref-col">← 6a</td></tr>
+<tr><th>Action 8</th><td>确认数据驻留/合规要求 — 切换 region 是否有数据驻留法规限制？需要与安全/合规团队确认</td><td class="ref-col">← 6b</td></tr>
+<tr><th>Action 9</th><td>与 Google TAM/Support 确认容量预留 — 能否为该项目做 capacity reservation？预留的前置时间多长？</td><td class="ref-col">← 6a,6b</td></tr>
+
+<tr class="section-header disc"><td colspan="3">Discovery 产出物</td></tr>
+<tr><th>产出物</th><td>Region & Capacity Assessment Report — 包含：quota 使用现状、机型可用性矩阵（region × zone × 机型）、autoscaler 配置审计结果、备选 region 评估、推荐路径</td><td class="ref-col"></td></tr>
+
+<tr class="section-header exec"><td colspan="3">执行计划</td></tr>
+<tr><th>Phase 0 (Week 1-2)</th><td>完成 Action 1-9；产出 Assessment Report；Week 1 内做出关键决策：留在当前 region（申请 quota + 预留容量）还是切换 region</td><td class="ref-col"></td></tr>
+<tr><th>Phase 1 (Week 2-3)</th><td>
+  <b>若留当前 region：</b>提交 quota increase + capacity reservation request；调整 autoscaler 配置；优化 node pool（换更小机型增加数量/加 spot instances）<br>
+  <b>若切换 region：</b>迁移 GKE cluster 配置到新 region；重新部署 workload；验证网络延迟可接受
+</td><td class="ref-col"></td></tr>
+<tr><th>Phase 2 (Week 4-7)</th><td>资源就绪后，配合 Pipeline（Blocker #5）做负载扩展测试；逐步 scale up 到生产规模</td><td class="ref-col"></td></tr>
+<tr><th>Phase 3 (Week 8-12)</th><td>生产稳定运行；优化资源利用率（right-sizing）；建立容量监控和预警</td><td class="ref-col"></td></tr>
+
+<tr class="section-header raci"><td colspan="3">RACI</td></tr>
+<tr><th>R — Responsible</th><td>Outcome CE（评估 + 方案建议）</td><td class="ref-col"></td></tr>
+<tr><th>A — Accountable</th><td>Head of Cloud Delivery（region 选择决策）</td><td class="ref-col"></td></tr>
+<tr><th>C — Consulted</th><td>Network Engineering（延迟影响评估）、Security/Compliance（数据驻留）、Google Support/TAM（容量预留）</td><td class="ref-col"></td></tr>
+<tr><th>I — Informed</th><td>VP of Operations</td><td class="ref-col"></td></tr>
+
+<tr class="section-header risk"><td colspan="3">风险与成功标准</td></tr>
+<tr><th>成功标准</th><td>计算资源可按需扩展至生产规模（无 quota/库存阻断）；autoscaling 在负载变化时 5 分钟内响应；资源利用率 60-80%</td><td class="ref-col"></td></tr>
+<tr><th>风险</th><td>Quota increase 审批周期不可控（可能 2-4 周）；切换 region 引入额外网络延迟和数据迁移成本</td><td class="ref-col"></td></tr>
+<tr><th>风险缓解</th><td>两条路并行推进——同时申请 quota 和评估备选 region，Week 2 根据进展选择快的那条；通过 Google TAM 加速 quota 审批</td><td class="ref-col"></td></tr>
+<tr><th>Blocker 依赖</th><td>与 #5（Pipeline Latency）强耦合——Pipeline 修复后需要足够的计算资源才能扩大吞吐量；与 #1（Interconnect）间接相关——切换 region 可能影响 Interconnect 路由<br><b>⚠️ 伪依赖提示：</b>资源诊断（quota 检查、机型测试、autoscaler 审计）独立于 Pipeline 修复，Day 1 即可并行启动</td><td class="ref-col"></td></tr>
+</table>
+</div>
+
+<div class="nav" style="margin-top:1rem"><a href="index.html">← 返回总览</a></div>
+<div class="footer">Delivery Acceleration Plan — Blocker #6 Detail</div>
+</body>
+</html>
