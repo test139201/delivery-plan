@@ -2,12 +2,79 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Blocker #7 — Loading...</title>
+<title>#7 BigQuery Cost — Blocker Detail</title>
 <link rel="stylesheet" href="style.css">
+<style>
+.ref-col{width:90px;text-align:center;font-size:.75rem;color:#6b7280;font-family:"Cascadia Code","Fira Code",monospace;vertical-align:middle;letter-spacing:-.02em;line-height:1.6}
+</style>
 </head>
 <body>
-<div id="blocker-root"></div>
-<script src="blocker-renderer.js"></script>
-<script>BlockerRenderer.init('blocker7.md', 'blocker-root');</script>
+<div class="nav"><a href="index.html">← 返回总览</a></div>
+
+<div class="page-header">
+  <h1>#7 BigQuery Cost</h1>
+  <span class="badge badge-p1">P1-快赢</span>
+  <span class="status status-tbd">未明确</span>
+</div>
+<p class="subtitle">子集 SQL 测试 + INFORMATION_SCHEMA 分析 — Quick Win 展示成本改善</p>
+
+<div class="card">
+<table>
+<tr class="section-header"><td colspan="3">基本信息</td></tr>
+<tr><th>架构图位置</th><td>BigQuery Data Warehouse</td><td class="ref-col"></td></tr>
+<tr><th>架构图标注</th><td>⚠️ Goal: Cost Reduction and Efficiency Improvement</td><td class="ref-col"></td></tr>
+<tr><th>上下游关系</th><td><b>上游:</b> Dataflow Pipeline 写入 → GKE 计算结果写入<br><b>下游:</b> 终端用户查询/报表/BI</td><td class="ref-col"></td></tr>
+<tr><th>Impact</th><td>资源 over-provisioning 或低效查询推高运行成本；影响迁移后的 TCO 优势，削弱业务部门对新平台的信心</td><td class="ref-col"></td></tr>
+<tr><th>假设归属</th><td>H1: 技术与基建（架构效率层面）</td><td class="ref-col"></td></tr>
+<tr><th>怀疑方向</th><td>BigQuery 使用方式未优化——可能存在全表扫描、未分区/聚簇、slot over-provisioning，导致成本高于必要水平</td><td class="ref-col"></td></tr>
+
+<tr class="section-header hyp"><td colspan="3">Sub-Hypotheses</td></tr>
+
+<tr class="sub-hyp"><th>BQ-a — 查询效率低</th><td>业务查询未优化，存在大量 full table scan、缺少分区剪裁</td><td class="ref-col"></td></tr>
+<tr class="validate"><th>✅ Validate</th><td>INFORMATION_SCHEMA.JOBS 显示 top queries 扫描字节数远超返回字节数（ratio &gt; 100:1）；分区表但查询未利用分区键过滤</td><td class="ref-col">→ A1,4<br>→ A6</td></tr>
+<tr class="invalidate"><th>❌ Invalidate</th><td>Top queries 扫描效率合理（有分区剪裁和列过滤）→ 查询不是成本问题</td><td class="ref-col">→ A1,4<br>→ A6</td></tr>
+
+<tr class="sub-hyp"><th>BQ-b — 表设计未优化</th><td>缺少分区和聚簇配置，或分区键选择不当</td><td class="ref-col"></td></tr>
+<tr class="validate"><th>✅ Validate</th><td>高频查询的目标表未分区或分区键与查询过滤字段不匹配；聚簇未配置在高基数过滤列上</td><td class="ref-col">→ A2,4</td></tr>
+<tr class="invalidate"><th>❌ Invalidate</th><td>分区/聚簇配置合理且查询命中 → 表设计不是问题</td><td class="ref-col">→ A2,4</td></tr>
+
+<tr class="sub-hyp"><th>BQ-c — Slot over-provisioning</th><td>购买了过多的 flat-rate slot 或 edition commitment，实际利用率低</td><td class="ref-col"></td></tr>
+<tr class="validate"><th>✅ Validate</th><td>Slot utilization 持续 &lt;30%；或使用 on-demand pricing 但高频查询可预测（应切 flat-rate）</td><td class="ref-col">→ A3,4<br>→ A5,6</td></tr>
+<tr class="invalidate"><th>❌ Invalidate</th><td>Slot 利用率在 60-80% 的健康范围 → 计费模式合理</td><td class="ref-col">→ A3,4<br>→ A5,6</td></tr>
+
+<tr class="section-header disc"><td colspan="3">Discovery — Technical Actions</td></tr>
+<tr><th>Action 1</th><td>INFORMATION_SCHEMA.JOBS 分析 — 查 top 20 最贵查询（by bytes scanned & slot time）；识别 full table scan 和低效 join</td><td class="ref-col">← BQ-a</td></tr>
+<tr><th>Action 2</th><td>分区/聚簇审查 — 检查所有核心表的分区键和聚簇列配置；对比高频查询的 WHERE 条件</td><td class="ref-col">← BQ-b</td></tr>
+<tr><th>Action 3</th><td>Slot Utilization 分析 — Cloud Monitoring 查看 slot 使用率趋势；识别峰值和低谷</td><td class="ref-col">← BQ-c</td></tr>
+<tr><th>Action 4</th><td>成本拆分 — 按 project/dataset/user 维度拆分 BigQuery 成本，找出最大开销来源</td><td class="ref-col">← BQ-a,b,c</td></tr>
+
+<tr class="section-header disc"><td colspan="3">Discovery — Process Actions</td></tr>
+<tr><th>Action 5</th><td>确认成本管理责任人 — 谁在看 BigQuery 成本？有无 FinOps 流程？有无预算警报？</td><td class="ref-col">← BQ-c</td></tr>
+<tr><th>Action 6</th><td>了解业务查询模式 — 与 BI/数据团队沟通，理解主要查询场景和频率，判断 on-demand vs flat-rate 哪个更合适</td><td class="ref-col">← BQ-a,c</td></tr>
+
+<tr class="section-header disc"><td colspan="3">Discovery 产出物</td></tr>
+<tr><th>产出物</th><td>BigQuery Cost Optimization Assessment — 包含：top costly queries 列表、分区/聚簇优化建议、slot sizing 建议、预估优化后成本节省比例</td><td class="ref-col"></td></tr>
+
+<tr class="section-header exec"><td colspan="3">执行计划</td></tr>
+<tr><th>Phase 2 (Week 4-7)</th><td>优化 top queries（加分区剪裁、重写低效 join）；调整表分区/聚簇策略</td><td class="ref-col"></td></tr>
+<tr><th>Phase 3 (Week 8-12)</th><td>调整 slot commitment / 切换计费模式；建立成本 dashboard 和预算警报；数据入 steady-state 后做最终 right-sizing</td><td class="ref-col"></td></tr>
+
+<tr class="section-header raci"><td colspan="3">RACI</td></tr>
+<tr><th>R — Responsible</th><td>Outcome CE（优化建议）+ Customer Data Team（执行查询和表优化）</td><td class="ref-col"></td></tr>
+<tr><th>A — Accountable</th><td>Head of Cloud Delivery（成本目标）</td><td class="ref-col"></td></tr>
+<tr><th>C — Consulted</th><td>Google TAM（BigQuery pricing 建议）、BI 团队（查询模式）</td><td class="ref-col"></td></tr>
+<tr><th>I — Informed</th><td>VP of Operations（成本报告）</td><td class="ref-col"></td></tr>
+
+<tr class="section-header risk"><td colspan="3">风险与成功标准</td></tr>
+<tr><th>成功标准</th><td>BigQuery 月度成本下降 ≥30%（优化后 vs 优化前）；无 full table scan 查询；slot 利用率 60-80%</td><td class="ref-col"></td></tr>
+<tr><th>风险</th><td>优化查询可能影响现有报表的运行时间或结果</td><td class="ref-col"></td></tr>
+<tr><th>风险缓解</th><td>优化前先在 staging 环境验证；保留原始查询版本可回滚</td><td class="ref-col"></td></tr>
+<tr><th>Blocker 依赖</th><td>依赖 #5（Pipeline）修复——Pipeline 写入 BigQuery 的方式（batch size、write disposition）直接影响存储和查询效率</td><td class="ref-col"></td></tr>
+</table>
+</div>
+
+<div class="nav" style="margin-top:1rem"><a href="index.html">← 返回总览</a></div>
+<div class="footer">Delivery Acceleration Plan — BigQuery Cost &amp; Efficiency Detail</div>
+<script src="site-editor.js"></script>
 </body>
 </html>

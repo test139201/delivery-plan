@@ -2,12 +2,92 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Blocker #1 — Loading...</title>
+<title>#1 Interconnect Bandwidth Throttled — Blocker Detail</title>
 <link rel="stylesheet" href="style.css">
+<style>
+.ref-col{width:90px;text-align:center;font-size:.75rem;color:#6b7280;font-family:"Cascadia Code","Fira Code",monospace;vertical-align:middle;letter-spacing:-.02em;line-height:1.6}
+</style>
 </head>
 <body>
-<div id="blocker-root"></div>
-<script src="blocker-renderer.js"></script>
-<script>BlockerRenderer.init('blocker1.md', 'blocker-root');</script>
+<div class="nav"><a href="index.html">← 返回总览</a></div>
+
+<div class="page-header">
+  <h1>#1 Interconnect Bandwidth Throttled</h1>
+  <span class="badge badge-p0">P0-长线</span>
+  <span class="status status-active">Active</span>
+</div>
+<p class="subtitle">运营商响应 2-4 周 — Pipeline 测试不需要全量带宽</p>
+
+<div class="card">
+<table>
+<tr class="section-header"><td colspan="3">基本信息</td></tr>
+<tr><th>架构图位置</th><td>Dedicated Interconnect → Connectivity（On-Prem 到 GCP 之间的物理链路）</td><td class="ref-col"></td></tr>
+<tr><th>架构图标注</th><td>⚠️ Throttled Connection</td><td class="ref-col"></td></tr>
+<tr><th>上下游关系</th><td><b>上游:</b> On-Prem Source（2PB Raw Data）<br><b>下游:</b> Cloud Storage（数据落地）→ Dataflow Pipeline</td><td class="ref-col"></td></tr>
+<tr><th>Impact</th><td>数据传输速度受限，直接拖慢 2PB 数据迁移进度，间接影响 Pipeline 吞吐量</td><td class="ref-col"></td></tr>
+<tr><th>假设归属</th><td>H1: 技术与基建</td><td class="ref-col"></td></tr>
+<tr><th>怀疑方向</th><td>Interconnect 实际吞吐量低于合同承诺，可能是物理链路配置、运营商限速、或 GCP 侧 attachment 配置不匹配</td><td class="ref-col"></td></tr>
+
+<tr class="section-header hyp"><td colspan="3">Sub-Hypotheses</td></tr>
+
+<tr class="sub-hyp"><th>1a — On-Prem 路由器配置</th><td>MTU mismatch 导致分片开销；单 BGP session 无法 ECMP 负载均衡；路由策略限制</td><td class="ref-col"></td></tr>
+<tr class="validate"><th>✅ Validate</th><td>traceroute 显示 on-prem 侧跳数异常或延迟集中在出口路由器；MTU 测试显示 fragmentation；BGP 只有单 session</td><td class="ref-col">→ A1,2,3,4<br>→ A9,10</td></tr>
+<tr class="invalidate"><th>❌ Invalidate</th><td>On-prem 路由器配置正确，MTU 一致，ECMP 已启用 → 问题不在客户侧</td><td class="ref-col">→ A1,2,3,4<br>→ A9,10</td></tr>
+<tr class="fallback"><th>→ 若排除</th><td>检查 Sub-Hypothesis 1b</td><td class="ref-col"></td></tr>
+
+<tr class="sub-hyp"><th>1b — 运营商限速</th><td>Carrier 有 rate-limiting policy 压低吞吐量，实际可用带宽低于合同购买的物理带宽</td><td class="ref-col"></td></tr>
+<tr class="validate"><th>✅ Validate</th><td>iperf3 测试持续达到一个固定上限（远低于物理带宽），且上限不随时间变化（典型限速特征）</td><td class="ref-col">→ A1,2<br>→ A7,8,10</td></tr>
+<tr class="invalidate"><th>❌ Invalidate</th><td>吞吐量随负载变化自然波动，无人为上限 → 运营商未限速</td><td class="ref-col">→ A1,2<br>→ A7,8,10</td></tr>
+<tr class="fallback"><th>→ 若排除</th><td>检查 Sub-Hypothesis 1c</td><td class="ref-col"></td></tr>
+
+<tr class="sub-hyp"><th>1c — GCP Attachment 配置</th><td>如 100G 物理端口上只配了单个 10G attachment，或 VLAN 配置错误</td><td class="ref-col"></td></tr>
+<tr class="validate"><th>✅ Validate</th><td><code>gcloud compute interconnects describe</code> 显示 attachment bandwidth &lt; 物理电路 bandwidth；VLAN tag 不匹配</td><td class="ref-col">→ A1,5,6<br>→ A10</td></tr>
+<tr class="invalidate"><th>❌ Invalidate</th><td>Attachment 配置与物理电路匹配，VLAN 正常 → 问题不在 GCP 侧</td><td class="ref-col">→ A1,5,6<br>→ A10</td></tr>
+<tr class="fallback"><th>→ 若排除</th><td>可能是复合问题（多层叠加），需要逐段对比排查</td><td class="ref-col"></td></tr>
+
+<tr class="section-header disc"><td colspan="3">Discovery — Technical Actions</td></tr>
+<tr><th>Action 1</th><td>iperf3 端到端吞吐量测试 — 从 on-prem 到 GCP VM（同 region），测峰值和持续吞吐量，对比合同带宽</td><td class="ref-col">← 1a,1b,1c</td></tr>
+<tr><th>Action 2</th><td>traceroute / mtr 延迟分层 — 定位延迟集中在哪一跳：on-prem 出口？运营商骨干？GCP 入口？</td><td class="ref-col">← 1a,1b</td></tr>
+<tr><th>Action 3</th><td>MTU 端到端测试 — <code>ping -M do -s 1472</code> 测试路径 MTU 是否一致，是否存在 fragmentation</td><td class="ref-col">← 1a</td></tr>
+<tr><th>Action 4</th><td>BGP Session 检查 — 确认 BGP session 数量、是否启用 ECMP、路由条目是否正确</td><td class="ref-col">← 1a</td></tr>
+<tr><th>Action 5</th><td>GCP Interconnect Metrics — Cloud Monitoring 查看 interconnect attachment 的利用率、丢包率、错误计数</td><td class="ref-col">← 1c</td></tr>
+<tr><th>Action 6</th><td><code>gcloud compute interconnects describe</code> — 检查 attachment bandwidth、VLAN 配置、link 状态</td><td class="ref-col">← 1c</td></tr>
+
+<tr class="section-header disc"><td colspan="3">Discovery — Process Actions</td></tr>
+<tr><th>Action 7</th><td>调取 Interconnect 合同 — 确认合同承诺的带宽（如 10G/100G）、SLA 条款、超额使用条款</td><td class="ref-col">← 1b</td></tr>
+<tr><th>Action 8</th><td>联系运营商 — 确认是否有 rate-limiting policy；请求提供运营商侧的链路利用率数据</td><td class="ref-col">← 1b</td></tr>
+<tr><th>Action 9</th><td>确认 Network Engineering 联系人 — 客户侧谁管 on-prem 路由器和 Interconnect？能否在 Week 1 安排联合诊断 session？</td><td class="ref-col">← 1a</td></tr>
+<tr><th>Action 10</th><td>确认变更审批流程 — 如果需要修改路由器配置或升级带宽，变更审批要走什么流程？周期多长？</td><td class="ref-col">← 1a,1b,1c</td></tr>
+
+<tr class="section-header disc"><td colspan="3">Discovery 产出物</td></tr>
+<tr><th>产出物</th><td>Network Performance Baseline Report — 包含：端到端吞吐量基线、逐跳延迟分解、MTU/BGP 配置状态、确认/排除的 sub-hypothesis、推荐修复路径及预计周期</td><td class="ref-col"></td></tr>
+
+<tr class="section-header exec"><td colspan="3">执行计划</td></tr>
+<tr><th>Phase 0 (Week 1-2)</th><td>完成 Action 1-10；产出 Baseline Report；确认根因在 1a/1b/1c 中的哪一个</td><td class="ref-col"></td></tr>
+<tr><th>Phase 1 (Week 2-3)</th><td>
+  <b>若 1a 确认（On-Prem 配置）：</b>修复 MTU / 启用 ECMP / 优化路由策略 — 客户 Network Eng 执行，CE 指导<br>
+  <b>若 1b 确认（运营商限速）：</b>联系运营商取消限速或升级套餐 — ⚠️ 运营商响应周期不可控，同时启动 VPN backup 方案<br>
+  <b>若 1c 确认（GCP Attachment）：</b>调整 attachment 配置或增加 attachment 数量 — Google TAM/Support 协助
+</td><td class="ref-col"></td></tr>
+<tr><th>Phase 2 (Week 4-7)</th><td>带宽修复后，配合数据迁移计划逐步提升传输量；监控吞吐量和丢包率</td><td class="ref-col"></td></tr>
+<tr><th>Phase 3 (Week 8-12)</th><td>2PB 数据传输完成；建立网络性能监控 dashboard 和告警</td><td class="ref-col"></td></tr>
+
+<tr class="section-header raci"><td colspan="3">RACI</td></tr>
+<tr><th>R — Responsible</th><td>Outcome CE（诊断指导）+ Customer Network Engineering（执行配置变更）</td><td class="ref-col"></td></tr>
+<tr><th>A — Accountable</th><td>Head of Cloud Delivery（网络性能目标）</td><td class="ref-col"></td></tr>
+<tr><th>C — Consulted</th><td>运营商技术支持、Google TAM/Support（Interconnect SLA + Attachment 配置）</td><td class="ref-col"></td></tr>
+<tr><th>I — Informed</th><td>VP of Operations、Pre-sales CE（原始网络设计上下文）</td><td class="ref-col"></td></tr>
+
+<tr class="section-header risk"><td colspan="3">风险与成功标准</td></tr>
+<tr><th>成功标准</th><td>端到端吞吐量达到合同带宽的 ≥80%；数据传输速度可支撑 90 天内完成 2PB 迁移；延迟和丢包在 SLA 内</td><td class="ref-col"></td></tr>
+<tr><th>风险</th><td>运营商升级/取消限速可能需要 2-4 周；物理带宽升级可能需要硬件采购（更长）</td><td class="ref-col"></td></tr>
+<tr><th>风险缓解</th><td>Phase 0 就启动运营商沟通；同时准备 VPN backup 方案作为临时带宽补充；与 #6 联动——如切换 region 则 Interconnect 路由也需重新评估</td><td class="ref-col"></td></tr>
+<tr><th>Blocker 依赖</th><td>#5（Pipeline Latency）的 Sub-Hyp 5b 就是"上游网络慢"——如果 #1 修复，#5 的延迟可能同步改善；#6（Region）——切换 region 可能需要新的 Interconnect 路由<br><b>⚠️ 伪依赖提示：</b>#5 Pipeline profiling 不需要等全量带宽，子集数据即可独立诊断</td><td class="ref-col"></td></tr>
+</table>
+</div>
+
+<div class="nav" style="margin-top:1rem"><a href="index.html">← 返回总览</a></div>
+<div class="footer">Delivery Acceleration Plan — Blocker #1 Detail</div>
+<script src="site-editor.js"></script>
 </body>
 </html>
