@@ -192,6 +192,7 @@ var BlockerRenderer = (function () {
 
     var storageKey  = 'blocker-md-' + mdFile;
     var originalMd  = '';
+    var sessionStartMd = '';   /* state when page opened (may include prior edits) */
     var currentMeta = null;
     var currentSections = null;
 
@@ -413,12 +414,16 @@ var BlockerRenderer = (function () {
     }
 
     function resetHandler() {
-      if (confirm('重置为原始内容？本地编辑将丢失。')) {
-        localStorage.removeItem(storageKey);
+      if (confirm('重置为本次打开时的内容？')) {
         undoStack.length = 0;
         redoStack.length = 0;
-        lastSavedMd = originalMd;
-        doRender(originalMd);
+        lastSavedMd = sessionStartMd;
+        if (sessionStartMd === originalMd) {
+          localStorage.removeItem(storageKey);
+        } else {
+          localStorage.setItem(storageKey, sessionStartMd);
+        }
+        doRender(sessionStartMd);
       }
     }
 
@@ -627,8 +632,9 @@ var BlockerRenderer = (function () {
     var saved = localStorage.getItem(storageKey);
     fetch(mdFile).then(function (r) { return r.text(); }).then(function (text) {
       originalMd = text;
-      lastSavedMd = saved || text;
-      doRender(saved || text);
+      sessionStartMd = saved || text;
+      lastSavedMd = sessionStartMd;
+      doRender(sessionStartMd);
     }).catch(function (err) {
       container.innerHTML = '<p style="color:var(--danger)">Failed to load ' + mdFile + ': ' + err.message + '</p>';
     });
