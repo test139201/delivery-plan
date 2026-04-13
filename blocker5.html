@@ -2,98 +2,12 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>#5 Data Pipeline Latency — Blocker Detail</title>
+<title>Blocker #5 — Loading...</title>
 <link rel="stylesheet" href="style.css">
-<style>
-.ref-col{width:90px;text-align:center;font-size:.75rem;color:#6b7280;font-family:"Cascadia Code","Fira Code",monospace;vertical-align:middle;letter-spacing:-.02em;line-height:1.6}
-</style>
 </head>
 <body>
-<div class="nav"><a href="index.html">← 返回总览</a></div>
-
-<div class="page-header">
-  <h1>#5 Data Pipeline Latency</h1>
-  <span class="badge badge-p0">P0-短线</span>
-  <span class="status status-active">Active</span>
-</div>
-<p class="subtitle">技术不确定性最高 — 子集数据 Day 1 profiling，不等带宽修复</p>
-
-<div class="card">
-<table>
-<!-- ===== 基本信息 ===== -->
-<tr class="section-header"><td colspan="3">基本信息</td></tr>
-<tr><th>架构图位置</th><td>Dataflow ETL Engine → Data Processing 节点</td><td class="ref-col"></td></tr>
-<tr><th>架构图标注</th><td>⚠️ Latency Bug</td><td class="ref-col"></td></tr>
-<tr><th>上下游关系</th><td><b>上游:</b> On-Prem ETL Engine → Dedicated Interconnect → Cloud Storage<br><b>下游:</b> GKE Compute Pool → BigQuery</td><td class="ref-col"></td></tr>
-<tr><th>Impact</th><td>无法承受生产负载，直接导致数据处理吞吐量不达标</td><td class="ref-col"></td></tr>
-<tr><th>假设归属</th><td>H1: 技术与基建</td><td class="ref-col"></td></tr>
-<tr><th>怀疑方向</th><td>ETL 代码从 on-prem 迁移到 Dataflow 后未做云原生适配，或者延迟源不在代码本身而在上游网络/下游存储</td><td class="ref-col"></td></tr>
-
-<!-- ===== Sub-Hypotheses ===== -->
-<tr class="section-header hyp"><td colspan="3">Sub-Hypotheses</td></tr>
-
-<tr class="sub-hyp"><th>5a — 代码层</th><td>ETL 逻辑未优化 — on-prem ETL 代码直接搬到 Dataflow，未利用 Dataflow 的并行处理能力，存在资源锁争用或低效序列化</td><td class="ref-col"></td></tr>
-<tr class="validate"><th>✅ Validate</th><td>Profiling 显示单个 stage 耗时异常；存在热点函数；shuffle 数据量远超输入数据量；序列化/反序列化占比 &gt;30%</td><td class="ref-col">→ A1,2,3,4,6<br>→ A7,9,10</td></tr>
-<tr class="invalidate"><th>❌ Invalidate</th><td>代码在隔离环境（小数据集 + 充足资源）性能达标，延迟随数据量/并发线性增长而非指数增长 → 代码本身没问题，瓶颈在外部</td><td class="ref-col">→ A1,2,3,4,6<br>→ A7,9,10</td></tr>
-<tr class="fallback"><th>→ 若排除</th><td>检查 Sub-Hypothesis 5b</td><td class="ref-col"></td></tr>
-
-<tr class="sub-hyp"><th>5b — 上游瓶颈</th><td>延迟源在网络传输层 — Interconnect 带宽不足导致数据进入 Cloud Storage 就已经慢了，Pipeline 只是"放大"了上游延迟</td><td class="ref-col"></td></tr>
-<tr class="validate"><th>✅ Validate</th><td>Cloud Storage 写入延迟与 Interconnect 传输延迟高度相关；Pipeline 等待数据输入的时间占总延迟的大部分</td><td class="ref-col">→ A2,5</td></tr>
-<tr class="invalidate"><th>❌ Invalidate</th><td>Cloud Storage 中的数据已就绪（无等待），Pipeline 处理阶段才出现延迟 → 问题在 Pipeline 内部，不在上游</td><td class="ref-col">→ A2,5</td></tr>
-<tr class="fallback"><th>→ 若排除</th><td>检查 Sub-Hypothesis 5c</td><td class="ref-col"></td></tr>
-
-<tr class="sub-hyp"><th>5c — 架构层</th><td>Dataflow pipeline 设计不适配 — 不是代码写得差，而是架构选型有问题（如 batch vs streaming 选错，partitioning 策略不当，数据 skew 未处理）</td><td class="ref-col"></td></tr>
-<tr class="validate"><th>✅ Validate</th><td>Dataflow job graph 显示严重的 data skew（部分 worker 负载是其他的 10x+）；batch window 设置与数据到达模式不匹配</td><td class="ref-col">→ A1,2,4,6<br>→ A8,10</td></tr>
-<tr class="invalidate"><th>❌ Invalidate</th><td>数据分布均匀、架构选型合理、job graph 无异常 → 需要看下游或整体链路</td><td class="ref-col">→ A1,2,4,6<br>→ A8,10</td></tr>
-<tr class="fallback"><th>→ 若排除</th><td>延迟可能是多层叠加的复合问题，需要端到端 Trace 分析</td><td class="ref-col"></td></tr>
-
-<!-- ===== Discovery ===== -->
-<tr class="section-header disc"><td colspan="3">Discovery — Technical Actions</td></tr>
-<tr><th>Action 1</th><td>Dataflow Job Profiling — 查看 job execution graph，识别最慢的 stage；检查每个 stage 的输入输出数据量比；识别 data skew（worker 间负载是否均衡）</td><td class="ref-col">← 5a,5c</td></tr>
-<tr><th>Action 2</th><td>Cloud Trace 端到端延迟分解 — 从数据进入 Cloud Storage 到写入 BigQuery 的完整链路，按层标注每段耗时：Ingestion → Processing → Transform → Load</td><td class="ref-col">← 5a,5b,5c</td></tr>
-<tr><th>Action 3</th><td>Cloud Profiler 代码级分析 — 识别 CPU 热点函数、内存分配模式、锁争用；对比 on-prem ETL 的关键代码路径</td><td class="ref-col">← 5a</td></tr>
-<tr><th>Action 4</th><td>Shuffle 和序列化分析 — 检查 Dataflow shuffle 数据量是否异常（shuffle bytes vs input bytes ratio）；检查序列化框架选择（Avro/Protobuf/JSON）</td><td class="ref-col">← 5a,5c</td></tr>
-<tr><th>Action 5</th><td>Cloud Storage I/O 分析 — 检查 source bucket 的读取延迟和吞吐量；确认是否因文件过大/过小导致 I/O 效率低</td><td class="ref-col">← 5b</td></tr>
-<tr><th>Action 6</th><td>On-Prem ETL 基准对比 — 用相同数据集在 on-prem ETL 跑一次，记录处理时间，作为 Dataflow 的性能对比基线</td><td class="ref-col">← 5a,5c</td></tr>
-
-<tr class="section-header disc"><td colspan="3">Discovery — Process Actions</td></tr>
-<tr><th>Action 7</th><td>确认 Pipeline 代码维护责任人 — 这段代码是谁写的？迁移到 Dataflow 时谁做的适配？目前谁有能力改？</td><td class="ref-col">← 5a</td></tr>
-<tr><th>Action 8</th><td>获取原始 Pipeline 设计文档 — 找 Pre-sales CE 拿最初的 pipeline 架构设计 + 审批文档，对比当前实际运行状态是否有 drift</td><td class="ref-col">← 5c</td></tr>
-<tr><th>Action 9</th><td>确认 Code Review 流程 — 代码变更是否有 review 机制？还是直接部署？有无 CI/CD pipeline？</td><td class="ref-col">← 5a</td></tr>
-<tr><th>Action 10</th><td>评估开发团队 Dataflow 经验 — 团队是否接受过 Dataflow 培训？是否是第一次用？是否需要 Google Specialist CE 支持？</td><td class="ref-col">← 5a,5c</td></tr>
-
-<tr class="section-header disc"><td colspan="3">Discovery 产出物</td></tr>
-<tr><th>产出物</th><td>Pipeline Performance Diagnostic Report — 包含：端到端延迟分解图、每个 stage 的耗时和数据量、确认/排除的 sub-hypothesis、推荐修复路径</td><td class="ref-col"></td></tr>
-
-<!-- ===== Execution ===== -->
-<tr class="section-header exec"><td colspan="3">执行计划</td></tr>
-<tr><th>Phase 0 (Week 1-2)</th><td>完成 Action 1-10；产出 Diagnostic Report；确认根因属于 5a/5b/5c 中的哪一个（或复合问题）</td><td class="ref-col"></td></tr>
-<tr><th>Phase 1 (Week 2-3)</th><td>
-  <b>若 5a 确认（代码层）：</b>优化热点代码 + 调整序列化方式 + 回归测试<br>
-  <b>若 5b 确认（上游网络）：</b>与 Blocker #1 联动修复 Interconnect，Pipeline 延迟将随网络改善而下降<br>
-  <b>若 5c 确认（架构层）：</b>重新设计 partitioning 策略 / 调整 batch window / 处理 data skew — ⚠️ 此路径耗时最长，可能延伸至 Phase 2
-</td><td class="ref-col"></td></tr>
-<tr><th>Phase 2 (Week 4-7)</th><td>Pipeline 修复后，逐步扩大数据处理量：10% → 30% → 60% → 100%；每级观察延迟和错误率</td><td class="ref-col"></td></tr>
-<tr><th>Phase 3 (Week 8-12)</th><td>全量生产负载稳定运行；性能调优（单位数据处理效率）；编写 Pipeline Runbook</td><td class="ref-col"></td></tr>
-
-<!-- ===== RACI ===== -->
-<tr class="section-header raci"><td colspan="3">RACI</td></tr>
-<tr><th>R — Responsible</th><td>Outcome CE（诊断 + 调优指导）+ Partner/Customer Dev Team（代码修改）</td><td class="ref-col"></td></tr>
-<tr><th>A — Accountable</th><td>Head of Cloud Delivery（Pipeline 性能目标）</td><td class="ref-col"></td></tr>
-<tr><th>C — Consulted</th><td>Pre-sales CE（原始设计意图）、Google Support/TAM（Dataflow 产品问题）</td><td class="ref-col"></td></tr>
-<tr><th>I — Informed</th><td>VP of Operations（进展通报）</td><td class="ref-col"></td></tr>
-
-<!-- ===== Risk ===== -->
-<tr class="section-header risk"><td colspan="3">风险与成功标准</td></tr>
-<tr><th>成功标准</th><td>Pipeline 在生产数据量下端到端延迟 ≤ SLA 要求；能持续处理全量生产负载对应的数据吞吐量；无需人工干预</td><td class="ref-col"></td></tr>
-<tr><th>风险</th><td>根因诊断可能需要多轮迭代（代码改了发现还是慢→再查架构）；开发团队可能缺 Dataflow 经验导致修复周期拉长</td><td class="ref-col"></td></tr>
-<tr><th>风险缓解</th><td>Week 1 就请 Google Specialist CE 介入；如果 Week 3 代码修复无明显改善，立即升级为架构重设计方案</td><td class="ref-col"></td></tr>
-<tr><th>Blocker 依赖</th><td>Blocker #1（Interconnect）带宽修复可能同步改善 Pipeline 延迟（Sub-Hyp 5b）；Blocker #6（Region）需要 Pipeline 修复后配合扩展<br><b>⚠️ 伪依赖提示：</b>Pipeline profiling 不需要全量带宽——子集数据即可 Day 1 启动诊断，不必等 #1 修复</td><td class="ref-col"></td></tr>
-</table>
-</div>
-
-<div class="nav" style="margin-top:1rem"><a href="index.html">← 返回总览</a></div>
-<div class="footer">Delivery Acceleration Plan — Blocker #5 Detail</div>
-<script src="site-editor.js"></script>
+<div id="blocker-root"><p style="color:#888;padding:2rem">Loading...</p></div>
+<script src="blocker-renderer.js"></script>
+<script>BlockerRenderer.init('blocker5.md', 'blocker-root');</script>
 </body>
 </html>
